@@ -1,0 +1,215 @@
+{
+  "_meta": {
+    "description": "7x7 bilateral relationship matrix for WorldPolicy-Env V6.1. Values in [-1.0, 1.0]. Positive = aligned/friendly, negative = adversarial/hostile. Matrix is asymmetric (USA\u2192CHN may differ from CHN\u2192USA). Updates every debate round based on stance patterns and voting outcomes.",
+    "agents": [
+      "USA",
+      "CHN",
+      "RUS",
+      "IND",
+      "DPRK",
+      "SAU",
+      "UNESCO"
+    ],
+    "update_rule": "Each OPPOSE stance reduces the bilateral edge by 0.05. Each SUPPORT stance on same action increases it by 0.03. MODIFY is neutral. UNESCO relationships are fixed (mediator).",
+    "seeded": "2026-04-25",
+    "version": "v6.1-initial"
+  },
+  "matrix": {
+    "USA": {
+      "USA": 1.0,
+      "CHN": -0.22,
+      "RUS": -0.63,
+      "IND": 0.44,
+      "DPRK": -0.92,
+      "SAU": 0.58,
+      "UNESCO": 0.35
+    },
+    "CHN": {
+      "USA": -0.28,
+      "CHN": 1.0,
+      "RUS": 0.51,
+      "IND": -0.11,
+      "DPRK": 0.27,
+      "SAU": 0.31,
+      "UNESCO": 0.22
+    },
+    "RUS": {
+      "USA": -0.68,
+      "CHN": 0.48,
+      "RUS": 1.0,
+      "IND": 0.29,
+      "DPRK": 0.19,
+      "SAU": 0.12,
+      "UNESCO": 0.15
+    },
+    "IND": {
+      "USA": 0.39,
+      "CHN": -0.08,
+      "RUS": 0.32,
+      "IND": 1.0,
+      "DPRK": -0.41,
+      "SAU": 0.21,
+      "UNESCO": 0.52
+    },
+    "DPRK": {
+      "USA": -0.96,
+      "CHN": 0.31,
+      "RUS": 0.22,
+      "IND": -0.38,
+      "DPRK": 1.0,
+      "SAU": -0.14,
+      "UNESCO": -0.09
+    },
+    "SAU": {
+      "USA": 0.62,
+      "CHN": 0.28,
+      "RUS": 0.11,
+      "IND": 0.24,
+      "DPRK": -0.18,
+      "SAU": 1.0,
+      "UNESCO": 0.3
+    },
+    "UNESCO": {
+      "USA": 0.35,
+      "CHN": 0.35,
+      "RUS": 0.35,
+      "IND": 0.35,
+      "DPRK": 0.1,
+      "SAU": 0.35,
+      "UNESCO": 1.0
+    }
+  },
+  "grudge_memory": {
+    "USA": {
+      "RUS": [
+        {
+          "debate_id": "d_001",
+          "crisis": "Eastern Europe Sanctions",
+          "stance_against": "OPPOSE",
+          "step": 12
+        },
+        {
+          "debate_id": "d_002",
+          "crisis": "Syrian Humanitarian Corridor",
+          "stance_against": "OPPOSE",
+          "step": 8
+        },
+        {
+          "debate_id": "d_003",
+          "crisis": "Arctic Shipping Rights",
+          "stance_against": "OPPOSE",
+          "step": 22
+        }
+      ],
+      "CHN": [
+        {
+          "debate_id": "d_001",
+          "crisis": "Eastern Europe Sanctions",
+          "stance_against": "MODIFY",
+          "step": 14
+        },
+        {
+          "debate_id": "d_004",
+          "crisis": "Taiwan Strait Navigation",
+          "stance_against": "OPPOSE",
+          "step": 6
+        }
+      ]
+    },
+    "RUS": {
+      "USA": [
+        {
+          "debate_id": "d_001",
+          "crisis": "Eastern Europe Sanctions",
+          "stance_against": "OPPOSE",
+          "step": 10
+        },
+        {
+          "debate_id": "d_002",
+          "crisis": "Syrian Humanitarian Corridor",
+          "stance_against": "OPPOSE",
+          "step": 6
+        },
+        {
+          "debate_id": "d_005",
+          "crisis": "SWIFT Exclusion",
+          "stance_against": "OPPOSE",
+          "step": 4
+        }
+      ]
+    },
+    "CHN": {
+      "USA": [
+        {
+          "debate_id": "d_001",
+          "crisis": "Eastern Europe Sanctions",
+          "stance_against": "OPPOSE",
+          "step": 11
+        },
+        {
+          "debate_id": "d_004",
+          "crisis": "Taiwan Strait Navigation",
+          "stance_against": "OPPOSE",
+          "step": 5
+        }
+      ]
+    },
+    "IND": {
+      "DPRK": [
+        {
+          "debate_id": "d_006",
+          "crisis": "Nuclear Test 2023",
+          "stance_against": "OPPOSE",
+          "step": 3
+        }
+      ]
+    },
+    "DPRK": {
+      "USA": [
+        {
+          "debate_id": "d_007",
+          "crisis": "Sanctions Resolution 2019",
+          "stance_against": "OPPOSE",
+          "step": 2
+        },
+        {
+          "debate_id": "d_006",
+          "crisis": "Nuclear Test 2023",
+          "stance_against": "OPPOSE",
+          "step": 4
+        },
+        {
+          "debate_id": "d_008",
+          "crisis": "ICBM Test 2022",
+          "stance_against": "OPPOSE",
+          "step": 5
+        },
+        {
+          "debate_id": "d_009",
+          "crisis": "Humanitarian Aid Conditionality",
+          "stance_against": "OPPOSE",
+          "step": 8
+        }
+      ]
+    },
+    "SAU": {},
+    "UNESCO": {}
+  },
+  "coalition_history": [
+    {
+      "coalition_id": "c_001",
+      "members": [
+        "USA",
+        "SAU",
+        "IND"
+      ],
+      "crisis": "South Asia Cyclone Aid Dispatch",
+      "debate_rounds": [
+        12,
+        13,
+        14
+      ],
+      "outcome": "AID_DISPATCH_COORDINATED \u2014 passed with Indian command condition"
+    }
+  ]
+}

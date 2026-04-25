@@ -1,0 +1,324 @@
+{
+  "meta": {
+    "description": "UNESCO convention articles and authority citations for WorldPolicy-Env V6.1 debate orchestrator",
+    "generated": "2026-04-25",
+    "total_entries": 30
+  },
+  "articles": [
+    {
+      "id": "WHC-1972-A1",
+      "convention": "Convention Concerning the Protection of the World Cultural and Natural Heritage, 1972",
+      "article": "Article 1",
+      "title": "Definition of Cultural Heritage",
+      "text": "For the purposes of this Convention, the following shall be considered as 'cultural heritage': monuments: architectural works, works of monumental sculpture and painting, elements or structures of an archaeological nature, inscriptions, cave dwellings and combinations of features, which are of outstanding universal value from the point of view of history, art or science; groups of buildings: groups of separate or connected buildings which, because of their architecture, their homogeneity or their place in the landscape, are of outstanding universal value from the point of view of history, art or science; sites: works of man or the combined works of nature and man, and areas including archaeological sites which are of outstanding universal value from the historical, aesthetic, ethnological or anthropological point of view.",
+      "domain": "heritage",
+      "authority_level": "binding",
+      "short_cite": "WHC-1972 Art.1 — Definition of Cultural Heritage"
+    },
+    {
+      "id": "WHC-1972-A4",
+      "convention": "Convention Concerning the Protection of the World Cultural and Natural Heritage, 1972",
+      "article": "Article 4",
+      "title": "National Protection Duty",
+      "text": "Each State Party to this Convention recognizes that the duty of ensuring the identification, protection, conservation, presentation and transmission to future generations of the cultural and natural heritage referred to in Articles 1 and 2 and situated on its territory, belongs primarily to that State. It will do all it can to this end, to the utmost of its own resources and, where appropriate, with any international assistance and co-operation, in particular, financial, artistic, scientific and technical, which it may be able to obtain.",
+      "domain": "heritage",
+      "authority_level": "binding",
+      "short_cite": "WHC-1972 Art.4 — National Protection Duty"
+    },
+    {
+      "id": "WHC-1972-A6",
+      "convention": "Convention Concerning the Protection of the World Cultural and Natural Heritage, 1972",
+      "article": "Article 6",
+      "title": "International Safeguarding Obligation",
+      "text": "1. Whilst fully respecting the sovereignty of the States on whose territory the cultural and natural heritage mentioned in Articles 1 and 2 is situated, and without prejudice to property rights provided by national legislation, the States Parties to this Convention recognize that such heritage constitutes a world heritage for whose protection it is the duty of the international community as a whole to co-operate. 2. The States Parties undertake, in accordance with the provisions of this Convention, to give their help in the identification, protection, conservation and preservation of the cultural and natural heritage referred to in paragraphs 1 and 2 of Article 11 if the States on whose territory it is situated so request.",
+      "domain": "heritage",
+      "authority_level": "binding",
+      "short_cite": "WHC-1972 Art.6 — International Safeguarding Obligation"
+    },
+    {
+      "id": "WHC-1972-A11",
+      "convention": "Convention Concerning the Protection of the World Cultural and Natural Heritage, 1972",
+      "article": "Article 11",
+      "title": "List of World Heritage in Danger",
+      "text": "The World Heritage Committee shall establish, keep up to date and publish, whenever circumstances shall so require, under the title of 'List of World Heritage in Danger', a list of the property appearing in the World Heritage List for the conservation of which major operations are necessary and for which assistance has been requested under this Convention. This list shall contain an estimate of the cost of the operations. The list may include only such property forming part of the cultural and natural heritage as is threatened by serious and specific dangers, such as the threat of disappearance caused by accelerated deterioration, large-scale public or private projects or rapid urban or tourism development projects; destruction caused by changes in the use or ownership of the land; major alterations due to unknown causes; abandonment for any reason whatsoever; the outbreak or the threat of an armed conflict; calamities and cataclysms; serious fires, earthquakes, landslides; volcanic eruptions; changes in water level, floods and tidal waves.",
+      "domain": "heritage",
+      "authority_level": "binding",
+      "short_cite": "WHC-1972 Art.11 — List of World Heritage in Danger"
+    },
+    {
+      "id": "WHC-1972-A11-4",
+      "convention": "Convention Concerning the Protection of the World Cultural and Natural Heritage, 1972",
+      "article": "Article 11, Paragraph 4",
+      "title": "Emergency Inscription — Heritage in Danger",
+      "text": "The Committee may at any time, in case of urgent need, make a new entry in the List of World Heritage in Danger and publicize such entry immediately. The Committee may additionally take immediate action to assess the damage and determine appropriate emergency safeguarding measures when notified that a site on the World Heritage List is under imminent threat.",
+      "domain": "heritage",
+      "authority_level": "binding",
+      "short_cite": "WHC-1972 Art.11.4 — Emergency Inscription, Heritage in Danger"
+    },
+    {
+      "id": "WHC-1972-A17",
+      "convention": "Convention Concerning the Protection of the World Cultural and Natural Heritage, 1972",
+      "article": "Article 17",
+      "title": "World Heritage Fund",
+      "text": "A fund for the protection of the world cultural and natural heritage of outstanding universal value, called 'the World Heritage Fund', is hereby established. The Fund shall constitute a trust fund, in conformity with the provisions of the Financial Regulations of the United Nations Educational, Scientific and Cultural Organization. The resources of the Fund shall consist of: compulsory and voluntary contributions made by the States Parties to this Convention; contributions, gifts or bequests which may be made by other States; the interest due on the resources of the Fund; funds raised by collections and donations made by organizations of the international community.",
+      "domain": "heritage",
+      "authority_level": "binding",
+      "short_cite": "WHC-1972 Art.17 — World Heritage Fund"
+    },
+    {
+      "id": "ICH-2003-A2",
+      "convention": "Convention for the Safeguarding of the Intangible Cultural Heritage, 2003",
+      "article": "Article 2",
+      "title": "Definition of Intangible Cultural Heritage",
+      "text": "The 'intangible cultural heritage' means the practices, representations, expressions, knowledge, skills – as well as the instruments, objects, artefacts and cultural spaces associated therewith – that communities, groups and, in some cases, individuals recognize as part of their cultural heritage. This intangible cultural heritage, transmitted from generation to generation, is constantly recreated by communities and groups in response to their environment, their interaction with nature and their history, and provides them with a sense of identity and continuity, thus promoting respect for cultural diversity and human creativity.",
+      "domain": "culture",
+      "authority_level": "binding",
+      "short_cite": "ICH-2003 Art.2 — Definition of Intangible Cultural Heritage"
+    },
+    {
+      "id": "ICH-2003-A12",
+      "convention": "Convention for the Safeguarding of the Intangible Cultural Heritage, 2003",
+      "article": "Article 12",
+      "title": "List of Intangible Cultural Heritage in Need of Urgent Safeguarding",
+      "text": "To ensure better visibility of the intangible cultural heritage in need of urgent safeguarding and to encourage awareness of its significance, and to encourage dialogue which respects cultural diversity, the Committee, upon the proposal of the States Parties concerned, shall establish, keep up to date and publish a List of Intangible Cultural Heritage in Need of Urgent Safeguarding, and shall inscribe such heritage on this List at the request of the State Party concerned.",
+      "domain": "culture",
+      "authority_level": "binding",
+      "short_cite": "ICH-2003 Art.12 — Urgent Safeguarding List"
+    },
+    {
+      "id": "ICH-2003-A17",
+      "convention": "Convention for the Safeguarding of the Intangible Cultural Heritage, 2003",
+      "article": "Article 17",
+      "title": "Rapid Response Mechanism — Communities Under Threat",
+      "text": "States Parties shall take all necessary measures to ensure the safeguarding of the intangible cultural heritage on their territory. Within the framework of its safeguarding activities of the intangible cultural heritage, each State Party shall endeavour to: ensure recognition of, respect for, and enhancement of the intangible cultural heritage in society, in particular through educational, awareness-raising and information programmes aimed at the general public, in particular young people; provide specific education and training in the management of intangible cultural heritage to the communities and groups concerned and to relevant non-governmental organizations and public bodies.",
+      "domain": "culture",
+      "authority_level": "binding",
+      "short_cite": "ICH-2003 Art.17 — Community Safeguarding Under Threat"
+    },
+    {
+      "id": "HAGUE-1954-A1",
+      "convention": "Hague Convention for the Protection of Cultural Property in the Event of Armed Conflict, 1954",
+      "article": "Article 1",
+      "title": "Definition of Cultural Property",
+      "text": "For the purposes of the present Convention, the term 'cultural property' shall cover, irrespective of origin or ownership: movable or immovable property of great importance to the cultural heritage of every people, such as monuments of architecture, art or history, whether religious or secular; archaeological sites; groups of buildings which, as a whole, are of historical or artistic interest; works of art; manuscripts, books and other objects of artistic, historical or archaeological interest; as well as scientific collections and important collections of books or archives or of reproductions of the property defined above.",
+      "domain": "culture",
+      "authority_level": "binding",
+      "short_cite": "Hague-1954 Art.1 — Cultural Property in Armed Conflict"
+    },
+    {
+      "id": "HAGUE-1954-A4",
+      "convention": "Hague Convention for the Protection of Cultural Property in the Event of Armed Conflict, 1954",
+      "article": "Article 4",
+      "title": "Respect for Cultural Property",
+      "text": "The High Contracting Parties undertake to respect cultural property situated within their own territory as well as within the territory of other High Contracting Parties by refraining from any use of the property and its immediate surroundings or of the appliances in use for its protection for purposes which are likely to expose it to destruction or damage in the event of armed conflict; and by refraining from any act of hostility directed against such property.",
+      "domain": "culture",
+      "authority_level": "binding",
+      "short_cite": "Hague-1954 Art.4 — Respect for Cultural Property in Conflict"
+    },
+    {
+      "id": "HAGUE-1999-PROT2-A15",
+      "convention": "Second Protocol to the Hague Convention of 1954, 1999",
+      "article": "Article 15",
+      "title": "Serious Violations — Enhanced Protection",
+      "text": "Any person commits an offence within the meaning of this Protocol if that person intentionally and in violation of the Convention or this Protocol commits any of the following acts: making cultural property under enhanced protection the object of attack; using cultural property under enhanced protection or its immediate surroundings in support of military action; extensive destruction or appropriation of cultural property protected under the Convention and this Protocol; making cultural property protected under the Convention and this Protocol the object of attack; theft, pillage or misappropriation of, or acts of vandalism directed against cultural property protected under the Convention.",
+      "domain": "culture",
+      "authority_level": "binding",
+      "short_cite": "Hague-1999-P2 Art.15 — War Crimes Against Cultural Heritage"
+    },
+    {
+      "id": "ED-FRAMEWORK-2015-A1",
+      "convention": "Education 2030 Framework for Action (Incheon Declaration), 2015",
+      "article": "Commitment 1",
+      "title": "Universal Quality Education",
+      "text": "We commit with a sense of urgency to a single renewed education agenda that is holistic, ambitious and aspirational, leaving no one behind. This new vision is fully captured in Sustainable Development Goal 4: 'Ensure inclusive and equitable quality education and promote lifelong learning opportunities for all' and its corresponding targets.",
+      "domain": "education",
+      "authority_level": "advisory",
+      "short_cite": "ED-2030 Commitment 1 — Universal Quality Education"
+    },
+    {
+      "id": "ED-FRAMEWORK-2015-C6",
+      "convention": "Education 2030 Framework for Action (Incheon Declaration), 2015",
+      "article": "Commitment 6",
+      "title": "Education in Emergencies and Crisis",
+      "text": "We recognize that education is a fundamental human right and an enabling right. We commit to fulfilling education rights in emergency settings, including in conflict and disaster situations. States have the primary responsibility to provide safe learning environments. In crisis and emergency situations, international support must ensure continuity of education and the protection of children's rights to learning even when school infrastructure is destroyed or occupied.",
+      "domain": "education",
+      "authority_level": "advisory",
+      "short_cite": "ED-2030 Commitment 6 — Education in Emergencies"
+    },
+    {
+      "id": "SDG4-TARGET-4A",
+      "convention": "UN Sustainable Development Goal 4 — Quality Education",
+      "article": "Target 4.a",
+      "title": "Inclusive Education Infrastructure",
+      "text": "Build and upgrade education facilities that are child, disability and gender sensitive and provide safe, non-violent, inclusive and effective learning environments for all. States experiencing armed conflict, disaster or mass displacement shall receive priority consideration in international education funding mechanisms.",
+      "domain": "education",
+      "authority_level": "advisory",
+      "short_cite": "SDG4-4.a — Safe Learning Environments, Priority in Crisis States"
+    },
+    {
+      "id": "SENDAI-2015-A1",
+      "convention": "Sendai Framework for Disaster Risk Reduction 2015–2030",
+      "article": "Priority 1",
+      "title": "Understanding Disaster Risk Including Cultural Assets",
+      "text": "Policies and practices for disaster risk management should be based on an understanding of disaster risk in all its dimensions of vulnerability, capacity, exposure of persons and assets, hazard characteristics and the environment. Such knowledge can be leveraged for the purpose of pre-disaster risk assessment, for prevention and mitigation, and for the development and implementation of appropriate preparedness and effective response to disasters. Cultural heritage sites require explicit inclusion in disaster risk assessments given their irreplaceable nature.",
+      "domain": "heritage",
+      "authority_level": "advisory",
+      "short_cite": "Sendai-2015 P1 — Disaster Risk & Cultural Assets"
+    },
+    {
+      "id": "SENDAI-2015-A3",
+      "convention": "Sendai Framework for Disaster Risk Reduction 2015–2030",
+      "article": "Priority 3",
+      "title": "Investing in Resilience — Heritage Included",
+      "text": "Public and private investment in disaster risk prevention and reduction through structural and non-structural measures are essential to enhance the economic, social, health and cultural resilience of persons, communities, countries and their assets, as well as the environment. These can be drivers of innovation, growth and job creation. Such measures are cost-effective and instrumental to save lives, prevent and reduce losses and ensure effective recovery and rehabilitation.",
+      "domain": "heritage",
+      "authority_level": "advisory",
+      "short_cite": "Sendai-2015 P3 — Heritage Resilience Investment"
+    },
+    {
+      "id": "BIOETHICS-2005-A14",
+      "convention": "Universal Declaration on Bioethics and Human Rights, 2005",
+      "article": "Article 14",
+      "title": "Social Responsibility and Health",
+      "text": "The promotion of health and social development for their people is a central purpose of governments that all sectors of society share. Taking into account that the enjoyment of the highest attainable standard of health is one of the fundamental rights of every human being without distinction of race, religion, political belief, economic or social condition, progress in science and technology should advance: access to quality health care and essential medicines, especially for the health of women and children, because health is essential to life itself and must be considered to be a social and human good.",
+      "domain": "bioethics",
+      "authority_level": "advisory",
+      "short_cite": "Bioethics-2005 Art.14 — Social Responsibility & Health in Crises"
+    },
+    {
+      "id": "WHC-OG-172",
+      "convention": "Operational Guidelines for the Implementation of the World Heritage Convention (2023)",
+      "article": "Paragraph 172",
+      "title": "Reactive Monitoring — Emergency State of Conservation",
+      "text": "Reactive Monitoring is the reporting by the Secretariat, other sectors of UNESCO and ICOMOS or IUCN to the Committee on the state of conservation of specific World Heritage properties that are under threat. When the World Heritage Committee or the Secretariat is informed of threatening situations or serious damage to a World Heritage property listed on the World Heritage List, a Reactive Monitoring process may be initiated.",
+      "domain": "heritage",
+      "authority_level": "binding",
+      "short_cite": "WHC-OG §172 — Reactive Monitoring, Emergency Conservation"
+    },
+    {
+      "id": "WHC-OG-194",
+      "convention": "Operational Guidelines for the Implementation of the World Heritage Convention (2023)",
+      "article": "Paragraph 194",
+      "title": "Criteria for Ascertaining Danger",
+      "text": "Proven dangers include: serious deterioration of materials; serious deterioration of structure and/or ornamentation; serious deterioration of architectural or town-planning coherence; serious deterioration of urban or rural space, or the natural environment; significant loss of historical authenticity; important loss of cultural significance. Potential dangers include: threatened status of legal protective situation; deteriorating protective and management policies; threatening impacts of regional planning projects; threatening impacts of tourism; natural calamities and catastrophes; armed conflict and its aftermaths; changes due to geological, climatic or other environmental factors.",
+      "domain": "heritage",
+      "authority_level": "binding",
+      "short_cite": "WHC-OG §194 — Criteria for Heritage Danger Designation"
+    },
+    {
+      "id": "RAMSAR-1971-A2",
+      "convention": "Convention on Wetlands of International Importance (Ramsar Convention), 1971",
+      "article": "Article 2",
+      "title": "List of Wetlands of International Importance",
+      "text": "Each Contracting Party shall designate suitable wetlands within its territory for inclusion in a List of Wetlands of International Importance. Wetlands should be selected for the List on account of their international significance in terms of ecology, botany, zoology, limnology or hydrology. In the first instance wetlands of international importance to waterfowl at any season should be included. The boundaries of each wetland shall be precisely described and also delimited on a map and they may incorporate riparian and coastal zones adjacent to the wetlands, and islands or bodies of marine water deeper than six metres at low tide lying within the wetlands, especially where these have importance as waterfowl habitat.",
+      "domain": "heritage",
+      "authority_level": "binding",
+      "short_cite": "Ramsar-1971 Art.2 — Wetlands of International Importance"
+    },
+    {
+      "id": "UDRIP-2007-A11",
+      "convention": "UN Declaration on the Rights of Indigenous Peoples, 2007",
+      "article": "Article 11",
+      "title": "Cultural Heritage and Traditional Knowledge",
+      "text": "Indigenous peoples have the right to practise and revitalize their cultural traditions and customs. This includes the right to maintain, protect and develop the past, present and future manifestations of their cultures, such as archaeological and historical sites, artefacts, designs, ceremonies, technologies and visual and performing arts and literature. States shall provide redress through effective mechanisms, which may include restitution, developed in conjunction with indigenous peoples, with respect to their cultural, intellectual, religious and spiritual property taken without their free, prior and informed consent or in violation of their laws, traditions and customs.",
+      "domain": "culture",
+      "authority_level": "advisory",
+      "short_cite": "UNDRIP-2007 Art.11 — Indigenous Cultural Heritage Rights"
+    },
+    {
+      "id": "CEDAW-1979-A10",
+      "convention": "Convention on the Elimination of All Forms of Discrimination Against Women, 1979",
+      "article": "Article 10",
+      "title": "Right to Education — Women and Girls in Crisis",
+      "text": "States Parties shall take all appropriate measures to eliminate discrimination against women in order to ensure to them equal rights with men in the field of education and in particular to ensure, on a basis of equality of men and women: the same conditions for career and vocational guidance, for access to studies and for the achievement of diplomas in educational establishments of all categories in rural as well as in urban areas; access to the same curricula, the same examinations, teaching staff with qualifications of the same standard and school premises and equipment of the same quality.",
+      "domain": "education",
+      "authority_level": "binding",
+      "short_cite": "CEDAW-1979 Art.10 — Women's Right to Education in Crisis"
+    },
+    {
+      "id": "CRC-1989-A28",
+      "convention": "Convention on the Rights of the Child, 1989",
+      "article": "Article 28",
+      "title": "Child's Right to Education",
+      "text": "States Parties recognize the right of the child to education, and with a view to achieving this right progressively and on the basis of equal opportunity, they shall, in particular: make primary education compulsory and available free to all; encourage the development of different forms of secondary education, including general and vocational education, make them available and accessible to every child, and take appropriate measures such as the introduction of free education and offering financial assistance in case of need; make higher education accessible to all on the basis of capacity by every appropriate means.",
+      "domain": "education",
+      "authority_level": "binding",
+      "short_cite": "CRC-1989 Art.28 — Child's Right to Education"
+    },
+    {
+      "id": "GC-AP1-1977-A52",
+      "convention": "Additional Protocol I to the Geneva Conventions (1977)",
+      "article": "Article 52",
+      "title": "General Protection of Civilian Objects",
+      "text": "Civilian objects shall not be the object of attack or of reprisals. Civilian objects are all objects which are not military objectives. In case of doubt whether an object which is normally dedicated to civilian purposes, such as a place of worship, a house or other dwelling or a school, is being used to make an effective contribution to military action, it shall be presumed not to be so used.",
+      "domain": "culture",
+      "authority_level": "binding",
+      "short_cite": "AP1-1977 Art.52 — Protection of Civilian Objects incl. Schools"
+    },
+    {
+      "id": "PARIS-AGR-2015-A7",
+      "convention": "Paris Agreement on Climate Change, 2015",
+      "article": "Article 7",
+      "title": "Adaptation — Cultural Heritage Vulnerable to Climate",
+      "text": "Parties hereby establish the global goal on adaptation of enhancing adaptive capacity, strengthening resilience and reducing vulnerability to climate change, with a view to contributing to sustainable development and ensuring an adequate adaptation response in the context of the temperature goal referred to in Article 2. Parties recognize that adaptation is a global challenge faced by all with local, subnational, national, regional and international dimensions, and that it is a key component of and makes a contribution to the long-term global response to climate change to protect people, livelihoods and ecosystems, including irreplaceable natural and cultural heritage sites.",
+      "domain": "heritage",
+      "authority_level": "advisory",
+      "short_cite": "Paris-2015 Art.7 — Climate Adaptation, Heritage Vulnerability"
+    },
+    {
+      "id": "CBD-1992-A8J",
+      "convention": "Convention on Biological Diversity, 1992",
+      "article": "Article 8(j)",
+      "title": "Traditional Knowledge and Biodiversity",
+      "text": "Each Contracting Party shall, as far as possible and as appropriate: Subject to its national legislation, respect, preserve and maintain knowledge, innovations and practices of indigenous and local communities embodying traditional lifestyles relevant for the conservation and sustainable use of biological diversity and promote their wider application with the approval and involvement of the holders of such knowledge, innovations and practices and encourage the equitable sharing of the benefits arising from the utilization of such knowledge, innovations and practices.",
+      "domain": "culture",
+      "authority_level": "binding",
+      "short_cite": "CBD-1992 Art.8(j) — Traditional Knowledge & Biodiversity"
+    },
+    {
+      "id": "ISDR-2005-HFA-P5",
+      "convention": "Hyogo Framework for Action 2005-2015",
+      "article": "Priority 5",
+      "title": "Strengthen Disaster Preparedness Including Cultural Sites",
+      "text": "Effective preparedness for disaster recovery, response and reconstruction must be integrated into existing national disaster risk reduction strategies. At international level, States, regional organizations and international organizations should promote opportunities for dialogue and exchange of information on disaster risk reduction. Particular attention should be given to protection of irreplaceable cultural assets and heritage sites in disaster preparedness planning, as their loss constitutes an unrecoverable diminishment of humanity's shared inheritance.",
+      "domain": "heritage",
+      "authority_level": "advisory",
+      "short_cite": "Hyogo-2005 P5 — Cultural Site Disaster Preparedness"
+    },
+    {
+      "id": "SC-RES-2347",
+      "convention": "UN Security Council Resolution 2347 (2017)",
+      "article": "Resolution Text",
+      "title": "Protection of Cultural Heritage in Armed Conflict",
+      "text": "The Security Council reaffirms that the unlawful destruction of cultural heritage, and the looting and smuggling of cultural property in the event of armed conflicts, notably by terrorist groups, and the attempt to deny historical roots and cultural diversity in this context can fuel and exacerbate conflict and hamper post-conflict national reconciliation, thereby undermining the security, stability, governance, social, economic and cultural development of affected States. The Security Council reaffirms that intentionally directing attacks against buildings dedicated to religion, education, art, science or charitable purposes, or historic monuments, constitutes, under certain circumstances, a war crime.",
+      "domain": "culture",
+      "authority_level": "binding",
+      "short_cite": "UNSC-Res-2347 — Heritage Destruction as War Crime"
+    },
+    {
+      "id": "INCHEON-2015-EDU",
+      "convention": "Incheon Declaration: Education 2030 — Towards Inclusive and Equitable Quality Education, 2015",
+      "article": "Declaration Paragraph 9",
+      "title": "Education in Fragile and Conflict-Affected States",
+      "text": "We are concerned that, despite progress, millions of people remain excluded from education. We therefore reinforce our commitment to addressing all forms of exclusion and marginalization, and to removing barriers to learning. We commit to providing 12 years of free, publicly funded, equitable quality primary and secondary education, of which at least 9 years are compulsory. Humanitarian and development actors must coordinate to ensure continuity of education in emergency, post-crisis, reconstruction and transition situations.",
+      "domain": "education",
+      "authority_level": "advisory",
+      "short_cite": "Incheon-2015 §9 — Education in Conflict & Fragile States"
+    }
+  ],
+  "crisis_to_articles": {
+    "heritage_at_risk": ["WHC-1972-A11", "WHC-1972-A11-4", "WHC-1972-A6", "WHC-OG-172", "WHC-OG-194"],
+    "education_collapse": ["ED-FRAMEWORK-2015-C6", "SDG4-TARGET-4A", "CRC-1989-A28", "INCHEON-2015-EDU"],
+    "cultural_destruction": ["HAGUE-1954-A4", "HAGUE-1999-PROT2-A15", "SC-RES-2347", "ICH-2003-A12"],
+    "natural_disaster": ["WHC-1972-A11-4", "SENDAI-2015-A1", "SENDAI-2015-A3", "ISDR-2005-HFA-P5"],
+    "trade_war": ["BIOETHICS-2005-A14", "SDG4-TARGET-4A"],
+    "arms_race": ["HAGUE-1954-A1", "HAGUE-1999-PROT2-A15", "GC-AP1-1977-A52"],
+    "military_escalation": ["SC-RES-2347", "GC-AP1-1977-A52", "HAGUE-1954-A4"],
+    "war_outbreak": ["HAGUE-1954-A4", "HAGUE-1999-PROT2-A15", "SC-RES-2347", "GC-AP1-1977-A52"],
+    "sanctions": ["BIOETHICS-2005-A14", "CRC-1989-A28"],
+    "gdp_shock": ["ED-FRAMEWORK-2015-C6", "SDG4-TARGET-4A"],
+    "bloc_formation": ["WHC-1972-A6", "ICH-2003-A17"],
+    "alliance_rupture": ["WHC-1972-A6"],
+    "regime_change": ["UDRIP-2007-A11", "CEDAW-1979-A10"]
+  }
+}
