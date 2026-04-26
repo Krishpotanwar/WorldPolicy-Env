@@ -177,7 +177,7 @@ We built something real. It just has real limitations too.
 
 ---
 
-## What Fifty Hours Taught Us
+## What Thirty Hours Taught Us
 
 There's a version of this project that we could have built by stacking twenty features and calling it done. We had a list that long at the start. The WIN plan — what we called our strategy document — told us to cut it. Pick one anchor. Build it to ship quality. Everything else serves that anchor or gets dropped.
 
