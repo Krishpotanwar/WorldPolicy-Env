@@ -32,6 +32,7 @@ Seven AI agents — USA, China, Russia, India, DPRK, Saudi Arabia, and UNESCO �
 **Live demo:** [huggingface.co/spaces/krishpotanwar/worldpolicy-v6](https://huggingface.co/spaces/krishpotanwar/worldpolicy-v6)  
 **Source:** [github.com/Krishpotanwar/WorldPolicy-Env](https://github.com/Krishpotanwar/WorldPolicy-Env)  
 **Trained model:** [krishpotanwar/worldpolicy-grpo-3b](https://huggingface.co/krishpotanwar/worldpolicy-grpo-3b)  
+**Training notebook:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Krishpotanwar/WorldPolicy-Env/blob/main/train.ipynb)  
 **Blog:** [We Gave Seven AI Agents a World Crisis and Watched Them Argue](BLOG.md)
 
 </div>
@@ -449,6 +450,7 @@ Secrets are configured in the HF Space settings panel — never committed to the
 - [x] Dockerfile builds and pre-trains scorer
 - [x] no secrets committed
 - [x] Blog written and linked (BLOG.md)
+- [x] Colab training notebook linked (train.ipynb via Open in Colab badge)
 - [ ] Add video link to hero section when available
 ```
 
