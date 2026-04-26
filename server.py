@@ -46,11 +46,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, AsyncIterator
 
+from dotenv import load_dotenv
 from fastapi import HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, StreamingResponse
 
 from openenv.core.env_server.http_server import create_app
+
+# Load local .env before importing modules that read env at import time.
+# override=True ensures stale exported shell vars don't shadow .env edits.
+load_dotenv(override=True)
 
 from debate_orchestrator import DebateOrchestrator, UNMediator
 from environment import WorldPolicyEnvironment
@@ -151,9 +156,13 @@ def _store_round(round_id: str, crisis_type: str, utterances: list[dict], tally:
 
 @app.get("/groq-status")
 def groq_status():
+    backend = getattr(_orchestrator, "_backend", "none")
     return {
         "status": "ok",
-        "live_groq": _orchestrator._use_live,
+        "debate_backend": backend,
+        "live_debate_enabled": bool(getattr(_orchestrator, "_use_live", False)),
+        "live_groq": backend == "groq",
+        "live_trained_model": backend == "mappo",
         "live_data_layer": _LIVE_DATA_OK,
         "market_data_layer": _MARKET_DATA_OK,
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -320,6 +329,15 @@ async def _debate_event_stream(
     force_canned: bool,
     max_rounds: int,
 ) -> AsyncIterator[str]:
+    # Prefer real-time crisis headline when available so debate context is live.
+    try:
+        live = get_live_crisis(crisis_type) if _LIVE_DATA_OK else None
+        live_headline = (live or {}).get("headline") if isinstance(live, dict) else None
+        if live_headline:
+            crisis_description = str(live_headline)[:MAX_DESCRIPTION_LEN]
+    except Exception:
+        pass
+
     involvement = _derive_involvement(crisis_type)
     task_cfg = next((t for t in TASKS.values() if t.get("crisis_type") == crisis_type), None)
     max_steps = task_cfg["max_steps"] if task_cfg else 10
@@ -381,7 +399,7 @@ async def live_debate(
 
     if not _orchestrator._use_live:
         return JSONResponse(
-            {"live": False, "reason": "GROQ_API_KEY not configured; /stream/debate will serve canned.",
+            {"live": False, "reason": "No live debate backend configured (set HF_TOKEN for trained model or switch backend). /stream/debate will serve canned.",
              "subscribe": f"/stream/debate?force_canned=true&max_rounds={max_rounds}&crisis_type={crisis_type}"},
             status_code=200,
         )

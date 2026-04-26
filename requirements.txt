@@ -15,6 +15,9 @@ pydantic>=2.9
 httpx>=0.28.1
 requests>=2.31
 
+# Local env-file loading (.env) for HF_TOKEN/API_BASE_URL etc.
+python-dotenv>=1.0.1
+
 # LLM clients — openenv-core requires openai>=2.7.2 transitively.
 # groq still drives the live debate path (DebateOrchestrator); 0.24+ has the
 # httpx-proxies fix from a previous audit; 1.x works against the same API.

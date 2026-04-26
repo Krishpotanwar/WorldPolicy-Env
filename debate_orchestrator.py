@@ -1,6 +1,6 @@
 """
 debate_orchestrator.py — WorldPolicy-Env V6.1
-Orchestrates multi-agent LLM debates using Groq (Llama 3.3-70b).
+Orchestrates multi-agent debates with trained model-first backend selection.
 
 Usage:
     orchestrator = DebateOrchestrator()
@@ -8,14 +8,18 @@ Usage:
         print(utterance)
 
 Environment variables (live debate):
-    GROQ_API_KEY — optional; if set, primary path uses Groq Llama 3.3-70b
-    If GROQ_API_KEY is unset but HF_TOKEN is set, debates use the trained
-    Hugging Face model (OpenAI-compatible API) — see _HF_API_BASE, MODEL_NAME
+    WP_DEBATE_BACKEND — optional; one of: mappo | groq | auto (default: mappo)
+        mappo: use trained HF model only
+        groq : use Groq only
+        auto : prefer mappo, fall back to groq
+    GROQ_API_KEY — optional; required when backend uses Groq
+    HF_TOKEN — optional; required when backend uses trained HF model
 """
 
 import asyncio
 import json
 import os
+import re
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -37,10 +41,29 @@ try:
 except ImportError:
     _OPENAI_AVAILABLE = False
 
-# HF Serverless Inference (OpenAI-compatible) — used when GROQ_API_KEY is absent
-_HF_API_BASE = os.environ.get("API_BASE_URL", "https://api-inference.huggingface.co/v1")
+# HF OpenAI-compatible routing endpoint.
+_HF_API_BASE = os.environ.get("API_BASE_URL", "https://router.huggingface.co/v1")
 _HF_MODEL    = os.environ.get("MODEL_NAME", "krishpotanwar/worldpolicy-grpo-3b")
+_HF_FALLBACK_MODEL = os.environ.get("MODEL_NAME_FALLBACK", "meta-llama/Llama-3.1-8B-Instruct")
 _HF_TOKEN    = os.environ.get("HF_TOKEN", "")
+_BACKEND_MODE = os.environ.get("WP_DEBATE_BACKEND", "mappo").strip().lower()
+
+
+def _hf_base_candidates(base_url: str) -> list[str]:
+    """Ordered candidate base URLs for HF OpenAI-compatible chat APIs."""
+    raw = (base_url or "").strip()
+    if not raw:
+        return []
+    candidates = [raw]
+    if "api-inference.huggingface.co" in raw and "router.huggingface.co" not in raw:
+        candidates.append("https://router.huggingface.co/v1")
+    if not raw.rstrip("/").endswith("/v1"):
+        candidates.append(raw.rstrip("/") + "/v1")
+    deduped = []
+    for c in candidates:
+        if c not in deduped:
+            deduped.append(c)
+    return deduped
 
 from persona_loader import PersonaLoader
 
@@ -464,20 +487,29 @@ class DebateOrchestrator:
         self._round_counter = 0
         self._last_debate_step = -DEBATE_RATE_LIMIT_STEPS  # allow first debate immediately
 
-        # Primary: Groq (Llama-70B, fast, best quality)
+        # Optional backends: Groq + trained model (HF OpenAI-compatible endpoint)
         api_key = os.environ.get("GROQ_API_KEY", "")
         self._groq_client = AsyncGroq(api_key=api_key) if GROQ_AVAILABLE and api_key else None
+        self._hf_clients: list[tuple[str, AsyncOpenAI]] = []
+        if _OPENAI_AVAILABLE and _HF_TOKEN:
+            for base in _hf_base_candidates(_HF_API_BASE):
+                self._hf_clients.append((base, AsyncOpenAI(base_url=base, api_key=_HF_TOKEN)))
 
-        # Fallback: trained model via HF Serverless Inference (OpenAI-compatible)
-        self._hf_client = (
-            AsyncOpenAI(base_url=_HF_API_BASE, api_key=_HF_TOKEN)
-            if _OPENAI_AVAILABLE and _HF_TOKEN and not self._groq_client
-            else None
+        mode = _BACKEND_MODE if _BACKEND_MODE in {"mappo", "groq", "auto"} else "mappo"
+        if mode == "groq":
+            self._backend = "groq" if self._groq_client else "none"
+        elif mode == "auto":
+            self._backend = "mappo" if self._hf_clients else ("groq" if self._groq_client else "none")
+        else:
+            # Default: trained model first (requested behavior)
+            self._backend = "mappo" if self._hf_clients else "none"
+
+        self._use_live = self._backend in {"mappo", "groq"}
+        print(
+            "DebateOrchestrator initialized. "
+            f"backend={self._backend} mode={mode} "
+            f"hf_model={bool(self._hf_clients)} groq={bool(self._groq_client)}"
         )
-
-        self._use_live  = bool(self._groq_client or self._hf_client)
-        self._use_groq  = bool(self._groq_client)
-        print(f"DebateOrchestrator initialized. Live Groq: {self._use_groq}  HF model: {bool(self._hf_client)}")
 
     def can_run_debate(self, current_step: int) -> bool:
         """Rate limit: max 1 debate per DEBATE_RATE_LIMIT_STEPS simulation steps."""
@@ -525,9 +557,18 @@ class DebateOrchestrator:
         sanitized["_model"] = GROQ_MODEL
         return sanitized
 
-    async def _call_hf_model(self, system_prompt: str, agent_id: str) -> dict:
+    async def _call_hf_model(
+        self,
+        system_prompt: str,
+        agent_id: str,
+        crisis_description: str = "",
+        live_events: list[str] | None = None,
+        public_sentiment: dict | None = None,
+        round_num: int = 1,
+        prior_utterances: list[dict] | None = None,
+    ) -> dict:
         """Call trained model via HF Serverless Inference (OpenAI-compatible endpoint)."""
-        if not self._hf_client:
+        if not self._hf_clients:
             raise RuntimeError("HF client not initialized")
 
         start = time.time()
@@ -539,30 +580,75 @@ class DebateOrchestrator:
             f'stance must be one of: support, oppose, modify, neutral, mediate\n'
             "JSON only, no markdown:"
         )
-        try:
-            resp = await self._hf_client.chat.completions.create(
-                model=_HF_MODEL,
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=200,
-                temperature=0.7,
-            )
-            raw_text = (resp.choices[0].message.content or "").strip()
-        except Exception as e:
-            return {
-                "text": f"{agent_id} considers the situation carefully.",
-                "stance": "neutral",
-                "mentioned_countries": [],
-                "authority_citation": None,
-                "_latency_ms": int((time.time() - start) * 1000),
-                "_model": _HF_MODEL,
-            }
+        raw_text = ""
+        used_model = _HF_MODEL
+        last_err = None
+        for base, client in self._hf_clients:
+            try:
+                resp = await client.chat.completions.create(
+                    model=_HF_MODEL,
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=200,
+                    temperature=0.7,
+                )
+                raw_text = (resp.choices[0].message.content or "").strip()
+                if raw_text:
+                    break
+            except Exception as e:
+                last_err = e
+                print(f"⚠️  HF model call failed for {agent_id} via {base}: {type(e).__name__}: {e}")
+                continue
 
-        import re
+        # Auto-fallback when account/provider doesn't support the primary fine-tuned model.
+        if not raw_text and last_err is not None and "model_not_supported" in str(last_err):
+            for base, client in self._hf_clients:
+                try:
+                    resp = await client.chat.completions.create(
+                        model=_HF_FALLBACK_MODEL,
+                        messages=[{"role": "user", "content": prompt}],
+                        max_tokens=200,
+                        temperature=0.7,
+                    )
+                    raw_text = (resp.choices[0].message.content or "").strip()
+                    if raw_text:
+                        used_model = _HF_FALLBACK_MODEL
+                        break
+                except Exception:
+                    continue
+
+        if not raw_text and last_err is not None:
+            fallback = self._local_fallback_from_prompt(
+                agent_id,
+                system_prompt,
+                crisis_description=crisis_description,
+                live_events=live_events,
+                public_sentiment=public_sentiment,
+                round_num=round_num,
+                prior_utterances=prior_utterances,
+                raw_text="",
+            )
+            fallback["_latency_ms"] = int((time.time() - start) * 1000)
+            fallback["_model"] = used_model
+            fallback["_fallback_reason"] = f"{type(last_err).__name__}"
+            return fallback
+
         match = re.search(r"\{.*\}", raw_text, re.DOTALL)
         try:
             parsed = json.loads(match.group()) if match else {}
         except (json.JSONDecodeError, AttributeError):
             parsed = {}
+
+        if not parsed:
+            parsed = self._local_fallback_from_prompt(
+                agent_id,
+                system_prompt,
+                crisis_description=crisis_description,
+                live_events=live_events,
+                public_sentiment=public_sentiment,
+                round_num=round_num,
+                prior_utterances=prior_utterances,
+                raw_text=raw_text,
+            )
 
         sanitized = {
             "text": str(parsed.get("text", f"{agent_id} weighs the proposal."))[:MAX_UTTERANCE_TEXT_LEN],
@@ -574,8 +660,92 @@ class DebateOrchestrator:
             "authority_citation": str(parsed.get("authority_citation", ""))[:200] if parsed.get("authority_citation") else None,
         }
         sanitized["_latency_ms"] = int((time.time() - start) * 1000)
-        sanitized["_model"] = _HF_MODEL
+        sanitized["_model"] = used_model
         return sanitized
+
+    def _local_fallback_from_prompt(
+        self,
+        agent_id: str,
+        system_prompt: str,
+        crisis_description: str = "",
+        live_events: list[str] | None = None,
+        public_sentiment: dict | None = None,
+        round_num: int = 1,
+        prior_utterances: list[dict] | None = None,
+        raw_text: str = "",
+    ) -> dict:
+        """Produce contextual fallback when HF response is unavailable/non-JSON."""
+        default_stance = {
+            "USA": "support",
+            "CHN": "modify",
+            "RUS": "oppose",
+            "IND": "neutral",
+            "DPRK": "oppose",
+            "SAU": "support",
+            "UN": "mediate",
+        }.get(agent_id, "neutral")
+        crisis = crisis_description.strip() or "the current crisis"
+        if len(crisis) > 140:
+            crisis = crisis[:140] + "..."
+        event_hint = (live_events[0].strip()[:140] if live_events else "")
+        sentiment_hint = ""
+        if public_sentiment:
+            sentiment_hint = f" Public sentiment is {public_sentiment.get('label', 'neutral')}."
+        relation_row = self.loader.get_relationship_row(agent_id)
+        allies = [a for a, v in sorted(relation_row.items(), key=lambda kv: kv[1], reverse=True) if v > 0.25 and a != agent_id][:2]
+        rivals = [a for a, v in sorted(relation_row.items(), key=lambda kv: kv[1]) if v < -0.25 and a != agent_id][:2]
+        grudges = self.loader.get_grudge_memory(agent_id, limit=2)
+        prior_utterances = prior_utterances or []
+        latest_other = next((u for u in reversed(prior_utterances) if u.get("speakerId") != agent_id), None)
+
+        mentioned = []
+        if latest_other and latest_other.get("speakerId"):
+            mentioned.append(latest_other["speakerId"])
+        if allies:
+            mentioned.extend(allies[:1])
+        elif rivals:
+            mentioned.extend(rivals[:1])
+        mentioned = [m for m in mentioned if m != agent_id][:3]
+
+        text = raw_text.strip()
+        if not text or len(text) < 16:
+            # Round-aware fallback: react to prior speaker + relationships + live events.
+            response_clause = ""
+            if latest_other:
+                other = latest_other.get("speakerId", "another delegation")
+                other_stance = latest_other.get("stance", "position")
+                response_clause = f" In response to {other}'s {other_stance} remarks, "
+
+            alliance_clause = ""
+            if allies:
+                alliance_clause = f" It seeks coordination with {', '.join(allies)}."
+            elif rivals:
+                alliance_clause = f" It challenges pressure from {', '.join(rivals)}."
+
+            history_clause = ""
+            if grudges:
+                g = grudges[0]
+                history_clause = f" It references prior friction with {g.get('against', 'a rival')}."
+
+            if agent_id == "UN":
+                text = (
+                    f"Under current mandate, UN mediates on {crisis} and pushes a compliance-focused compromise."
+                    f"{response_clause}it urges all parties to remain within legal authority."
+                    f"{(' Recent UNESCO context: ' + event_hint + '.') if event_hint else ''}"
+                )
+            else:
+                text = (
+                    f"{agent_id} takes a {default_stance} stance on {crisis} in round {round_num}."
+                    f"{response_clause}it frames its position around current risk signals."
+                    f"{(' Recent domestic signal: ' + event_hint + '.') if event_hint else ''}"
+                    f"{alliance_clause}{history_clause}{sentiment_hint}"
+                )
+        return {
+            "text": text[:MAX_UTTERANCE_TEXT_LEN],
+            "stance": default_stance,
+            "mentioned_countries": mentioned,
+            "authority_citation": None,
+        }
 
     def _get_canned(self, crisis_type: str, agent_order: list[str], round_num: int = 1) -> list[dict]:
         """Return canned debate utterances, with round-specific rebuttals when available."""
@@ -638,7 +808,7 @@ class DebateOrchestrator:
         round_utterances = []
 
         if use_live:
-            # ── LIVE PATH: Groq (primary) or trained HF model (fallback) ────
+            # ── LIVE PATH: trained model (default) or Groq (optional) ───────
             tasks = {}
             for agent_id in speaker_order:
                 inv_level = "involved" if agent_id in involved else "peripheral"
@@ -654,17 +824,27 @@ class DebateOrchestrator:
                     live_events=live_events,
                     public_sentiment=sentiment,
                 )
-                if self._use_groq:
+                if self._backend == "groq":
                     tasks[agent_id] = asyncio.create_task(self._call_groq(prompt, agent_id))
                 else:
-                    tasks[agent_id] = asyncio.create_task(self._call_hf_model(prompt, agent_id))
+                    tasks[agent_id] = asyncio.create_task(
+                        self._call_hf_model(
+                            prompt,
+                            agent_id,
+                            crisis_description=crisis_description,
+                            live_events=live_events,
+                            public_sentiment=sentiment,
+                            round_num=1,
+                            prior_utterances=[],
+                        )
+                    )
 
-            timeout = GROQ_TIMEOUT + 2 if self._use_groq else 30.0
+            timeout = GROQ_TIMEOUT + 2 if self._backend == "groq" else 30.0
             for agent_id in speaker_order:
                 try:
                     raw = await asyncio.wait_for(tasks[agent_id], timeout=timeout)
                 except Exception as e:
-                    backend = "Groq" if self._use_groq else "HF model"
+                    backend = "Groq" if self._backend == "groq" else "trained model"
                     print(f"⚠️  {backend} failed for {agent_id}: {e}. Falling back to canned.")
                     canned = self._get_canned(crisis_type, [agent_id])
                     raw = canned[0] if canned else {
@@ -784,17 +964,27 @@ class DebateOrchestrator:
                         live_events=live_events,
                         public_sentiment=sentiment,
                     )
-                    if self._use_groq:
+                    if self._backend == "groq":
                         tasks[agent_id] = asyncio.create_task(self._call_groq(prompt, agent_id))
                     else:
-                        tasks[agent_id] = asyncio.create_task(self._call_hf_model(prompt, agent_id))
+                        tasks[agent_id] = asyncio.create_task(
+                            self._call_hf_model(
+                                prompt,
+                                agent_id,
+                                crisis_description=crisis_description,
+                                live_events=live_events,
+                                public_sentiment=sentiment,
+                                round_num=round_num,
+                                prior_utterances=all_utterances,
+                            )
+                        )
 
-                timeout = GROQ_TIMEOUT + 2 if self._use_groq else 30.0
+                timeout = GROQ_TIMEOUT + 2 if self._backend == "groq" else 30.0
                 for agent_id in speaker_order:
                     try:
                         raw = await asyncio.wait_for(tasks[agent_id], timeout=timeout)
                     except Exception as e:
-                        backend = "Groq" if self._use_groq else "HF model"
+                        backend = "Groq" if self._backend == "groq" else "trained model"
                         print(f"⚠️  {backend} failed for {agent_id} round {round_num}: {e}")
                         canned = self._get_canned(crisis_type, [agent_id], round_num)
                         raw = canned[0] if canned else {
