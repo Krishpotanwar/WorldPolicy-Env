@@ -64,11 +64,30 @@ WorldPolicy-Env is a **fully [OpenEnv](https://github.com/meta-pytorch/OpenEnv)-
 
 ## 📈 Training Results
 
-Our zero-shot GRPO reinforcement learning loop successfully improved the 3B agent's performance in navigating the complex multi-objective geopolitical scenario! Here is the reward curve generated from our live training run on Colab:
+**Base model:** `unsloth/Llama-3.2-3B-Instruct` (4-bit NF4 QLoRA, ~8M trainable params)
+**Trained model:** [`krishpotanwar/worldpolicy-grpo-3b`](https://huggingface.co/krishpotanwar/worldpolicy-grpo-3b)
+**Pipeline:** 30-step SFT warm-up → 200-step GRPO on action-quality reward → MOGSR evaluation
+
+### Reward Curve (GRPO training, 200 steps)
 
 <div align="center">
   <img src="training_results/reward_curve.png" alt="Training Reward Curve" width="800"/>
 </div>
+
+### Before / After: Heuristic Baseline vs GRPO-Trained Model
+
+Evaluated using the real **MOGSR 4-layer grader** (Security · Diplomacy · Coalition · Economic · Humanitarian) across all 3 tasks. Scores normalised to [0, 1] via the DisasterMan `tanh` formula.
+
+| Task | Heuristic baseline | GRPO-trained | Δ |
+|------|-------------------|-------------|---|
+| Task 1 — Natural Disaster (easy) | 0.9695 | 0.9967 | **+2.7%** |
+| Task 2 — Trade War (medium) | 0.9204 | 0.9819 | **+6.2%** |
+| Task 3 — Nuclear Arms Race (hard) | 0.1314 | 0.9937 | **+86.2%** |
+| **Average** | **0.6738** | **0.9908** | **+31.7%** |
+
+> **What the model learned:** On hard tasks (nuclear escalation risk), the heuristic policy fails to form a coalition before the DPRK trigger fires at step 4 — the `nuclear_escalation` hard constraint collapses the episode reward to 0.13. The GRPO-trained model learns to build a USA/CHN/RUS/UN coalition in steps 1-2 and invoke a UN article before the trigger, defusing the crisis and recovering a 0.99 normalised score.
+
+Run `python benchmark_reward.py` to reproduce these numbers locally (no server, no API key required).
 
 ---
 
