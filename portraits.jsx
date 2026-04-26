@@ -1,36 +1,6 @@
 /* AgentPortraitStrip — 7 circular portraits with hover/click/active states */
 /* AGENTS imported from agents.js (window.AGENTS) */
 
-function UNESCOLaurel({ size }) {
-  return React.createElement('svg', { width: size, height: size, viewBox: '0 0 48 48', style: { display: 'block' } },
-    // Laurel branches
-    React.createElement('g', { fill: 'none', stroke: '#14b8a6', strokeWidth: 1.2, opacity: 0.8 },
-      // Left branch
-      React.createElement('path', { d: 'M24 40 C18 36, 12 30, 10 22' }),
-      React.createElement('path', { d: 'M14 34 C12 32, 10 28, 10 24' }),
-      React.createElement('path', { d: 'M16 36 C14 33, 11 30, 11 26' }),
-      React.createElement('path', { d: 'M18 38 C15 35, 13 32, 12 28' }),
-      // Leaves left
-      React.createElement('ellipse', { cx: 11, cy: 24, rx: 3, ry: 1.5, transform: 'rotate(-30 11 24)', fill: '#14b8a6', fillOpacity: 0.2 }),
-      React.createElement('ellipse', { cx: 12, cy: 28, rx: 3, ry: 1.5, transform: 'rotate(-20 12 28)', fill: '#14b8a6', fillOpacity: 0.2 }),
-      React.createElement('ellipse', { cx: 14, cy: 31, rx: 3, ry: 1.5, transform: 'rotate(-10 14 31)', fill: '#14b8a6', fillOpacity: 0.2 }),
-      // Right branch
-      React.createElement('path', { d: 'M24 40 C30 36, 36 30, 38 22' }),
-      React.createElement('path', { d: 'M34 34 C36 32, 38 28, 38 24' }),
-      React.createElement('path', { d: 'M32 36 C34 33, 37 30, 37 26' }),
-      React.createElement('path', { d: 'M30 38 C33 35, 35 32, 36 28' }),
-      // Leaves right
-      React.createElement('ellipse', { cx: 37, cy: 24, rx: 3, ry: 1.5, transform: 'rotate(30 37 24)', fill: '#14b8a6', fillOpacity: 0.2 }),
-      React.createElement('ellipse', { cx: 36, cy: 28, rx: 3, ry: 1.5, transform: 'rotate(20 36 28)', fill: '#14b8a6', fillOpacity: 0.2 }),
-      React.createElement('ellipse', { cx: 34, cy: 31, rx: 3, ry: 1.5, transform: 'rotate(10 34 31)', fill: '#14b8a6', fillOpacity: 0.2 }),
-    ),
-    // Globe in center
-    React.createElement('circle', { cx: 24, cy: 20, r: 8, fill: 'none', stroke: '#14b8a6', strokeWidth: 1, opacity: 0.6 }),
-    React.createElement('ellipse', { cx: 24, cy: 20, rx: 3, ry: 8, fill: 'none', stroke: '#14b8a6', strokeWidth: 0.6, opacity: 0.4 }),
-    React.createElement('line', { x1: 16, y1: 20, x2: 32, y2: 20, stroke: '#14b8a6', strokeWidth: 0.6, opacity: 0.4 }),
-  );
-}
-
 function AgentPortrait({ agent, isActive, isInvolved, isPeripheral, isFocused, onHover, onClick, tooltip, sentiment }) {
   const [hovered, setHovered] = React.useState(false);
   const [justPromoted, setJustPromoted] = React.useState(false);
@@ -49,7 +19,6 @@ function AgentPortrait({ agent, isActive, isInvolved, isPeripheral, isFocused, o
     prevPeripheralRef.current = isPeripheral;
   }, [isInvolved, isPeripheral]);
 
-  const isUNESCO = agent.id === 'UNESCO';
   const dim = !isInvolved && !isPeripheral && !isActive && !isFocused;
 
   const containerStyle = {
@@ -63,9 +32,7 @@ function AgentPortrait({ agent, isActive, isInvolved, isPeripheral, isFocused, o
 
   const discStyle = {
     width: 72, height: 72, borderRadius: '50%', position: 'relative',
-    background: isUNESCO
-      ? 'linear-gradient(135deg, rgba(20,184,166,0.08) 0%, rgba(255,255,255,0.04) 100%)'
-      : 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)',
+    background: 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)',
     backdropFilter: 'blur(16px)',
     border: '2px solid ' + agent.tint + (isFocused ? 'ff' : hovered ? '80' : '33'),
     boxShadow: [
@@ -179,22 +146,16 @@ function AgentPortrait({ agent, isActive, isInvolved, isPeripheral, isFocused, o
   },
     React.createElement('div', { style: discStyle },
       pulseRing, crisisRing, promotionFlash, liveLed, sentimentChip,
-      isUNESCO
-        ? React.createElement(UNESCOLaurel, { size: 44 })
-        : React.createElement('span', {
-            style: { fontFamily: 'var(--font-mono)', fontSize: 22, fontWeight: 700,
-              color: agent.tint, letterSpacing: 2, opacity: 0.9 }
-          }, agent.code),
+      React.createElement('span', {
+          style: { fontFamily: 'var(--font-mono)', fontSize: 22, fontWeight: 700,
+            color: agent.tint, letterSpacing: 2, opacity: 0.9 }
+        }, agent.code),
       focusTick,
     ),
     React.createElement('span', {
       style: { fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 600,
         letterSpacing: '0.8px', color: 'rgba(255,255,255,0.6)', textAlign: 'center' }
     }, agent.id === 'DPRK' ? 'N. KOREA' : agent.id),
-    isUNESCO && React.createElement('span', {
-      style: { fontFamily: 'var(--font-mono)', fontSize: 7, letterSpacing: '1px',
-        color: '#14b8a6', opacity: 0.6, marginTop: -2 }
-    }, 'MEDIATOR · NON-VOTING'),
     tooltipEl,
   );
 }
@@ -210,12 +171,12 @@ function AgentPortraitStrip({ activeSpeakerId, focusedId, involvement, tooltips,
     }
   },
     AGENTS.map((agent, i) => React.createElement(React.Fragment, { key: agent.id },
-      i === 6 && React.createElement('div', { style: { width: 20 } }), // gap before UNESCO
+      i === 6 && React.createElement('div', { style: { width: 20 } }), // gap before UN
       React.createElement(AgentPortrait, {
         agent,
         isActive: activeSpeakerId === agent.id,
         isInvolved: inv.involved?.includes(agent.id),
-        isPeripheral: inv.peripheral?.includes(agent.id) || agent.id === 'UNESCO',
+        isPeripheral: inv.peripheral?.includes(agent.id) || agent.id === 'UN',
         isFocused: focusedId === agent.id,
         tooltip: tooltips?.[agent.id] || null,
         sentiment: sents[agent.id] || null,
@@ -226,4 +187,4 @@ function AgentPortraitStrip({ activeSpeakerId, focusedId, involvement, tooltips,
   );
 }
 
-Object.assign(window, { AGENTS, AgentPortraitStrip, AgentPortrait, UNESCOLaurel });
+Object.assign(window, { AGENTS, AgentPortraitStrip, AgentPortrait });

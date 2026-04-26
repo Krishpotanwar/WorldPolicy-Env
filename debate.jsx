@@ -122,17 +122,60 @@ function ExpandableText({ text, isNew }) {
   );
 }
 
+function CitationExpander({ citation, isAuthoritative }) {
+  const [open, setOpen] = React.useState(false);
+  const chips = citation.split(';').map(s => s.trim()).filter(Boolean);
+
+  return React.createElement('div', { style: { marginTop: 6 } },
+    React.createElement('div', {
+      style: { display: 'flex', alignItems: 'center', gap: 8 }
+    },
+      React.createElement('span', {
+        onClick: () => setOpen(!open),
+        style: {
+          fontFamily: 'var(--font-mono)', fontSize: 9, color: '#eab308',
+          cursor: 'pointer', userSelect: 'none',
+        }
+      }, open ? 'Hide mandate ▾' : 'View mandate ▸'),
+      React.createElement('span', {
+        style: {
+          fontFamily: 'var(--font-mono)', fontSize: 8, fontWeight: 700,
+          letterSpacing: '0.5px', padding: '1px 6px', borderRadius: 3,
+          background: isAuthoritative ? 'rgba(34,197,94,0.12)' : 'rgba(245,158,11,0.12)',
+          border: '1px solid ' + (isAuthoritative ? 'rgba(34,197,94,0.25)' : 'rgba(245,158,11,0.25)'),
+          color: isAuthoritative ? '#22c55e' : '#f59e0b',
+        }
+      }, isAuthoritative ? 'WITHIN MANDATE ✓' : 'ADVISORY'),
+    ),
+    open && React.createElement('div', {
+      style: { display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }
+    },
+      chips.map((chip, i) =>
+        React.createElement('span', {
+          key: i,
+          style: {
+            fontFamily: 'var(--font-mono)', fontSize: 9, padding: '2px 6px', borderRadius: 3,
+            background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.25)',
+            color: 'rgba(234,179,8,0.8)',
+          }
+        }, chip)
+      ),
+    ),
+  );
+}
+
 function UtteranceRow({ u, isActive, isNew }) {
+  const isUN = u.speakerId === 'UN';
   const pnlText = u.pnlDeltas ? Object.entries(u.pnlDeltas)
     .filter(([,v]) => v !== 0)
     .map(([k,v]) => k + ' ' + (v > 0 ? '+' : '') + v.toFixed(3))
     .join(', ') : '';
 
-  return React.createElement('div', {
+  const row = React.createElement('div', {
     className: isNew ? 'glass-appear' : '',
     style: {
       display: 'flex', gap: 0, padding: '10px 12px 10px 0',
-      background: isActive ? u.speakerTint + '0f' : 'transparent',
+      background: isUN ? 'rgba(234,179,8,0.04)' : (isActive ? u.speakerTint + '0f' : 'transparent'),
       borderBottom: '1px solid rgba(255,255,255,0.04)',
       transition: 'background 0.3s',
     }
@@ -151,6 +194,14 @@ function UtteranceRow({ u, isActive, isNew }) {
           style: { fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700,
             letterSpacing: '1.2px', color: u.speakerTint }
         }, u.speakerName.toUpperCase()),
+        isUN && React.createElement('span', {
+          style: {
+            fontFamily: 'var(--font-mono)', fontSize: 8, fontWeight: 700,
+            letterSpacing: '0.8px', padding: '1px 6px', borderRadius: 3,
+            background: 'rgba(234,179,8,0.12)', border: '1px solid rgba(234,179,8,0.3)',
+            color: '#eab308',
+          }
+        }, 'UN MEDIATOR'),
         React.createElement(StancePill, { stance: u.stance }),
         isActive && React.createElement('div', {
           style: { display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }
@@ -165,6 +216,10 @@ function UtteranceRow({ u, isActive, isNew }) {
           color: 'rgba(255,255,255,0.85)',
         }
       }, React.createElement(ExpandableText, { text: u.text, isNew: isNew })),
+      isUN && u.authorityCitation && React.createElement(CitationExpander, {
+        citation: u.authorityCitation,
+        isAuthoritative: u.isAuthoritative,
+      }),
       React.createElement('div', {
         style: { fontFamily: 'var(--font-mono)', fontSize: 9, color: 'rgba(255,255,255,0.25)',
           marginTop: 6 }
@@ -173,6 +228,16 @@ function UtteranceRow({ u, isActive, isNew }) {
       ),
     ),
   );
+
+  if (isUN) {
+    return React.createElement(React.Fragment, null,
+      React.createElement('div', {
+        style: { height: 1, background: 'linear-gradient(90deg, transparent, rgba(234,179,8,0.35) 50%, transparent)' }
+      }),
+      row,
+    );
+  }
+  return row;
 }
 
 function VoteBar({ tally }) {
@@ -483,5 +548,6 @@ function DebateTranscriptPanel({ utterances, activeSpeakerId, focusedId, voteTal
 
 Object.assign(window, {
   DebateTranscriptPanel, VoteBar, StancePill, RoundDivider, ConnectionErrorBanner,
-  ThinkingIndicator, TypewriterText, ExpandableText, DebateOutcomeBanner, STANCE_STYLES,
+  ThinkingIndicator, TypewriterText, ExpandableText, DebateOutcomeBanner, CitationExpander,
+  STANCE_STYLES,
 });

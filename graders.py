@@ -51,7 +51,7 @@ HARD_PENALTIES: Dict[str, float] = {
     "illegal_aggression":   -0.5,
     "contradictory_policy": -0.2,   # agent flips a prior stance without justification
     "coalition_collapse":   -0.3,   # formed coalition broke in same round
-    "un_charter_violation": -0.4,   # UNESCO flagged action as mandate breach
+    "un_charter_violation": -0.4,   # UN flagged action as mandate breach
 }
 
 GAMMA = 0.95   # long-horizon value discount
@@ -108,7 +108,7 @@ def _economic_score(r: Dict[str, Any]) -> float:
 
 
 def _humanitarian_score(r: Dict[str, Any]) -> float:
-    """H: civilian protection + UNESCO mandate adherence."""
+    """H: civilian protection + UN mandate adherence."""
     civilian_harm = float(r.get("civilian_harm_index", 0.0))
     refugee_risk = float(r.get("refugee_displacement_risk", 0.0))
     law_compliance = float(r.get("law_compliance_score", 0.5))

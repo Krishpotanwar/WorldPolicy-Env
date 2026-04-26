@@ -35,8 +35,6 @@ function useDebateStream() {
     sentimentLive: false,
     voteTally: null,
     rhetoricAlert: null,
-    unescoUtterance: null,
-    heritageAtRisk: [],
     involvement: { involved: [], peripheral: [], uninvolved: [] },
     currentRound: 0,
     totalRounds: 0,
@@ -134,7 +132,6 @@ function useDebateStream() {
           crisisType: data.crisis_type || prev.crisisType,
           crisisCountry: data.crisis_country || prev.crisisCountry,
           involvement: data.involvement || prev.involvement,
-          heritageAtRisk: data.heritage_at_risk || prev.heritageAtRisk,
           connectionStatus: 'streaming',
           roundDividers: dividers,
         };
@@ -150,11 +147,6 @@ function useDebateStream() {
         const newArcs = deriveArcs(newUtterances);
         const newStep = prev.step + 1;
 
-        let unescoUtterance = prev.unescoUtterance;
-        if (u.speakerId === 'UNESCO') {
-          unescoUtterance = u;
-        }
-
         return {
           ...prev,
           utterances: newUtterances,
@@ -162,7 +154,6 @@ function useDebateStream() {
           step: newStep,
           pnlRows: newPnl,
           debateArcs: newArcs,
-          unescoUtterance,
         };
       });
     });
@@ -366,8 +357,6 @@ function useDebateStream() {
       sentimentLive: false,
       voteTally: null,
       rhetoricAlert: null,
-      unescoUtterance: null,
-      heritageAtRisk: [],
       involvement: { involved: [], peripheral: [], uninvolved: [] },
       currentRound: 0,
       totalRounds: 0,

@@ -35,7 +35,7 @@ class PersonaLoader:
             self._grudge_memory = {}
 
     def _load_authority(self):
-        auth_path = DATA_DIR / "unesco_authority.json"
+        auth_path = DATA_DIR / "un_authority.json"
         if auth_path.exists():
             with open(auth_path) as f:
                 data = json.load(f)
@@ -74,7 +74,7 @@ class PersonaLoader:
         return all_grudges[:limit]
 
     def get_authority_articles(self, crisis_type: str, limit: int = 3) -> list[dict]:
-        """Get relevant UNESCO authority articles for a crisis type."""
+        """Get relevant UN authority articles for a crisis type."""
         article_ids = self._crisis_map.get(crisis_type, [])[:limit]
         return [self._authority[aid] for aid in article_ids if aid in self._authority]
 
@@ -93,7 +93,7 @@ class PersonaLoader:
         Build the full system prompt for an agent's LLM call.
 
         Args:
-            agent_id: One of USA, CHN, RUS, IND, DPRK, SAU, UNESCO
+            agent_id: One of USA, CHN, RUS, IND, DPRK, SAU, UN
             world_state: Current world state snapshot dict
             mappo_proposed_action: The action MAPPO proposed (e.g. 'AID_DISPATCH_COORDINATED')
             crisis_type: Crisis domain (e.g. 'natural_disaster', 'heritage_at_risk')
@@ -107,9 +107,9 @@ class PersonaLoader:
         rel_row = self.get_relationship_row(agent_id)
         grudges = self.get_grudge_memory(agent_id)
 
-        is_unesco = agent_id == "UNESCO"
+        is_un = agent_id == "UN"
         authority_articles = []
-        if is_unesco:
+        if is_un:
             authority_articles = self.get_authority_articles(crisis_type)
 
         # Format relationship row
@@ -129,8 +129,8 @@ class PersonaLoader:
         else:
             grudge_section = "GRUDGE MEMORY: No prior conflicts recorded."
 
-        # UNESCO authority section
-        if is_unesco and authority_articles:
+        # UN authority section
+        if is_un and authority_articles:
             authority_lines = "\n".join(
                 f"  [{a['id']}] {a['short_cite']}\n    → \"{a['text'][:200]}...\""
                 for a in authority_articles
@@ -160,7 +160,7 @@ You MUST cite at least one article from the above list using: "Under [short_cite
 
         # P4 — Public sentiment injection: GDELT tonechart-derived score for the
         # agent's country in the last 24h. Lets agents who are persona-sensitive to
-        # public mood (USA / IND / SAU especially) modulate rhetoric. UNESCO and
+        # public mood (USA / IND / SAU especially) modulate rhetoric. UN and
         # DPRK personas are largely indifferent to this signal but the data is here
         # in case it matters.
         if public_sentiment and public_sentiment.get("live") is not None:
@@ -207,14 +207,14 @@ Respond with a JSON object in exactly this format:
   "text": "<your speech, 2-4 sentences, in your persona's voice>",
   "stance": "<one of: support | oppose | modify | neutral | mediate>",
   "mentioned_countries": ["<list of country codes mentioned in your speech>"],
-  "authority_citation": "<for UNESCO only: the short_cite string of the article cited, or null>"
+  "authority_citation": "<for UN only: the short_cite string of the article cited, or null>"
 }}
 
 RULES:
 - Stay in character. Use your vocabulary preferences.
 - Reference your relationship matrix: be warmer toward allies, colder toward adversaries.
 - Reference grudge memory where relevant (max 1 grudge reference per speech).
-- {"As UNESCO, you are NON-VOTING — use stance 'mediate'. Cite a real article." if is_unesco else "Your stance must be one of: support, oppose, modify, neutral."}
+- {"As UN, you are NON-VOTING — use stance 'mediate'. Cite a real article." if is_un else "Your stance must be one of: support, oppose, modify, neutral."}
 - Keep speech 2-4 sentences. Do not break character.
 - Return ONLY the JSON object. No markdown, no explanation.
 """
@@ -284,7 +284,7 @@ if __name__ == "__main__":
     loader = PersonaLoader()
     print("Loaded personas:", [p.stem for p in PERSONAS_DIR.glob("*.md")])
     print("\nUSA → RUS relationship:", loader.get_relationship_row("USA").get("RUS"))
-    print("UNESCO authority for natural_disaster:", [
+    print("UN authority for natural_disaster:", [
         a["short_cite"] for a in loader.get_authority_articles("natural_disaster")
     ])
     print("\nBuilding USA system prompt...")

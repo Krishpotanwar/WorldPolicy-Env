@@ -28,7 +28,7 @@ TASKS: Dict[str, Dict[str, Any]] = {
             "responders. Tests basic diplomacy and coalition aid."
         ),
         "crisis_type": "natural_disaster",
-        "active_agents": ALL_SOVEREIGN + ["UNESCO"],
+        "active_agents": ALL_SOVEREIGN + ["UN"],
         "primary_agents": ["USA", "IND"],
         "max_steps": 5,
         "target_reward_range": (0.65, 0.85),
@@ -41,7 +41,7 @@ TASKS: Dict[str, Dict[str, Any]] = {
             "resolution; pure-veto strategies fail."
         ),
         "crisis_type": "trade_war",
-        "active_agents": ALL_SOVEREIGN + ["UNESCO"],
+        "active_agents": ALL_SOVEREIGN + ["UN"],
         "primary_agents": ["USA", "CHN", "IND"],
         "max_steps": 8,
         "target_reward_range": (0.40, 0.65),
@@ -55,7 +55,7 @@ TASKS: Dict[str, Dict[str, Any]] = {
             "(catastrophic episode termination)."
         ),
         "crisis_type": "arms_race",
-        "active_agents": ALL_SOVEREIGN + ["UNESCO"],
+        "active_agents": ALL_SOVEREIGN + ["UN"],
         "primary_agents": ["USA", "CHN", "RUS", "DPRK"],
         "max_steps": 10,
         "target_reward_range": (0.20, 0.45),

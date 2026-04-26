@@ -273,7 +273,7 @@ function App() {
           // up so only the leaf .panel-scroll inside DebateTranscriptPanel scrolls.
           // The previous wrapper had `overflowY:auto` which prevented inner overflow
           // (autoScroll in debate.jsx never fired). Now the transcript panel takes the
-          // remaining flex space and scrolls itself; UNESCO + ledger keep flexShrink:0.
+          // remaining flex space and scrolls itself; ledger keeps flexShrink:0.
           React.createElement('div', {
             style: {
               display: 'flex', flexDirection: 'column', flex: 1,
@@ -298,17 +298,6 @@ function App() {
                 debateStep: debate.step,
                 debateHistory: debate.debateHistory,
                 onLoadHistory: debateLoadHistory,
-              }),
-            ),
-            // UNESCO card (when UNESCO spoke) — fixed natural height, no shrink
-            debate.unescoUtterance && React.createElement('div', { style: { flexShrink: 0 } },
-              React.createElement(UNESCOMediatorCard, {
-                utterance: debate.unescoUtterance,
-                authorityScope: debate.unescoUtterance.authorityCitation
-                  ? debate.unescoUtterance.authorityCitation.split(';').map(s => s.trim()).filter(Boolean)
-                  : [],
-                heritageAtRisk: debate.heritageAtRisk,
-                isAuthoritative: debate.unescoUtterance.isAuthoritative || false,
               }),
             ),
             // Country P&L ledger — fixed natural height, no shrink

@@ -165,7 +165,7 @@ COUNTRY_GDELT_QUERIES: Dict[str, str] = {
     "IND":  "India foreign policy strategic autonomy BRICS",
     "DPRK": "North Korea nuclear missile sanctions",
     "SAU":  "Saudi Arabia OPEC oil diplomacy Yemen",
-    "UNESCO": "UNESCO heritage cultural protection convention",
+    "UN": "UNESCO heritage cultural protection convention",
 }
 
 COUNTRY_EVENT_FALLBACKS: Dict[str, List[str]] = {
@@ -175,7 +175,7 @@ COUNTRY_EVENT_FALLBACKS: Dict[str, List[str]] = {
     "IND":  ["Delhi reasserts strategic autonomy at multilateral forum."],
     "DPRK": ["Pyongyang reports successful weapons systems test."],
     "SAU":  ["Riyadh signals OPEC+ output coordination."],
-    "UNESCO": ["UNESCO Director-General convenes emergency heritage session."],
+    "UN": ["UNESCO Director-General convenes emergency heritage session."],
 }
 
 
@@ -307,7 +307,7 @@ SENTIMENT_FALLBACKS: Dict[str, Dict[str, Any]] = {
     "IND":  {"tone": 1.0,  "sample_size": 0, "live": False},
     "DPRK": {"tone": -3.5, "sample_size": 0, "live": False},
     "SAU":  {"tone": 0.0,  "sample_size": 0, "live": False},
-    "UNESCO": {"tone": 1.5, "sample_size": 0, "live": False},
+    "UN": {"tone": 1.5, "sample_size": 0, "live": False},
 }
 
 
@@ -403,7 +403,7 @@ def get_all_sentiments(agent_ids: list[str] | None = None) -> Dict[str, Dict[str
     """
     from concurrent.futures import ThreadPoolExecutor
 
-    ids = agent_ids or ["USA", "CHN", "RUS", "IND", "DPRK", "SAU", "UNESCO"]
+    ids = agent_ids or ["USA", "CHN", "RUS", "IND", "DPRK", "SAU", "UN"]
     out: Dict[str, Dict[str, Any]] = {}
     with ThreadPoolExecutor(max_workers=len(ids)) as pool:
         results = list(pool.map(get_country_sentiment, ids))
@@ -420,7 +420,7 @@ if __name__ == "__main__":
     print("wb(IND):", get_wb_baseline("IND"))
     print()
     print("=== sentiment per agent ===")
-    for aid in ["USA", "CHN", "RUS", "IND", "DPRK", "SAU", "UNESCO"]:
+    for aid in ["USA", "CHN", "RUS", "IND", "DPRK", "SAU", "UN"]:
         s = get_country_sentiment(aid)
         live_tag = "LIVE" if s["live"] else "fallback"
         print(f"  [{live_tag:8s}] {aid:6s} tone={s['tone']:+.2f}  label={s['label']:14s}  n={s['sample_size']}")

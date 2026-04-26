@@ -29,7 +29,7 @@ VALID_ACTION_TYPES = {
     "invoke_article",
     "sanction",
 }
-VALID_AGENT_IDS = {"USA", "CHN", "RUS", "IND", "DPRK", "SAU", "UNESCO"}
+VALID_AGENT_IDS = {"USA", "CHN", "RUS", "IND", "DPRK", "SAU", "UN"}
 
 
 # ── Action ────────────────────────────────────────────────────────────────────
@@ -44,7 +44,7 @@ class WorldPolicyAction(Action):
 
     agent_id: str = Field(
         ...,
-        description="One of USA, CHN, RUS, IND, DPRK, SAU, UNESCO",
+        description="One of USA, CHN, RUS, IND, DPRK, SAU, UN",
         max_length=10,
     )
     action_type: str = Field(

@@ -304,13 +304,12 @@ function WorldOutcomeSummaryCard({ voteTally, pnlRows, utterances, crisisLabel, 
   // Top P&L movers: |Δgdp| highest 3
   const movers = (pnlRows || [])
     .map(r => ({ id: r.countryId, tint: r.tint, gdp: r.metrics?.gdp || 0, welfare: r.metrics?.welfare || 0 }))
-    .filter(r => r.id !== 'UNESCO')
+    .filter(r => r.id !== 'UN')
     .sort((a, b) => Math.abs(b.gdp) - Math.abs(a.gdp))
     .slice(0, 3);
 
-  // UNESCO citation invoked
-  const unescoCite = (utterances || [])
-    .filter(u => u.speakerId === 'UNESCO' && u.authorityCitation)
+  const unCite = (utterances || [])
+    .filter(u => u.speakerId === 'UN' && u.authorityCitation)
     .map(u => u.authorityCitation)
     .pop() || null;
 
@@ -376,13 +375,13 @@ function WorldOutcomeSummaryCard({ voteTally, pnlRows, utterances, crisisLabel, 
         ),
       ),
     ),
-    // UNESCO cite
-    unescoCite && React.createElement('div', { style: {
-      padding: '10px 12px', background: 'rgba(20,184,166,0.08)', border: '1px solid rgba(20,184,166,0.3)',
+    // UN cite
+    unCite && React.createElement('div', { style: {
+      padding: '10px 12px', background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.3)',
       borderRadius: 8, marginBottom: 12,
     } },
-      React.createElement('div', { style: { fontSize: 9, color: 'rgba(20,184,166,0.8)', letterSpacing: '1.5px', marginBottom: 4 } }, 'UNESCO AUTHORITY INVOKED'),
-      React.createElement('div', { style: { fontSize: 11, color: 'rgba(255,255,255,0.82)' } }, unescoCite),
+      React.createElement('div', { style: { fontSize: 9, color: 'rgba(234,179,8,0.8)', letterSpacing: '1.5px', marginBottom: 4 } }, 'UN AUTHORITY INVOKED'),
+      React.createElement('div', { style: { fontSize: 11, color: 'rgba(255,255,255,0.82)' } }, unCite),
     ),
     // Teaser
     React.createElement('div', { style: { fontSize: 10, color: 'rgba(255,255,255,0.35)', textAlign: 'center', marginTop: 8,

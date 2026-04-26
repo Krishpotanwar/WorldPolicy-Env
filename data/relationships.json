@@ -8,9 +8,9 @@
       "IND",
       "DPRK",
       "SAU",
-      "UNESCO"
+      "UN"
     ],
-    "update_rule": "Each OPPOSE stance reduces the bilateral edge by 0.05. Each SUPPORT stance on same action increases it by 0.03. MODIFY is neutral. UNESCO relationships are fixed (mediator).",
+    "update_rule": "Each OPPOSE stance reduces the bilateral edge by 0.05. Each SUPPORT stance on same action increases it by 0.03. MODIFY is neutral. UN relationships are fixed (mediator).",
     "seeded": "2026-04-25",
     "version": "v6.1-initial"
   },
@@ -22,7 +22,7 @@
       "IND": 0.44,
       "DPRK": -0.92,
       "SAU": 0.58,
-      "UNESCO": 0.35
+      "UN": 0.35
     },
     "CHN": {
       "USA": -0.28,
@@ -31,7 +31,7 @@
       "IND": -0.11,
       "DPRK": 0.27,
       "SAU": 0.31,
-      "UNESCO": 0.22
+      "UN": 0.22
     },
     "RUS": {
       "USA": -0.68,
@@ -40,7 +40,7 @@
       "IND": 0.29,
       "DPRK": 0.19,
       "SAU": 0.12,
-      "UNESCO": 0.15
+      "UN": 0.15
     },
     "IND": {
       "USA": 0.39,
@@ -49,7 +49,7 @@
       "IND": 1.0,
       "DPRK": -0.41,
       "SAU": 0.21,
-      "UNESCO": 0.52
+      "UN": 0.52
     },
     "DPRK": {
       "USA": -0.96,
@@ -58,7 +58,7 @@
       "IND": -0.38,
       "DPRK": 1.0,
       "SAU": -0.14,
-      "UNESCO": -0.09
+      "UN": -0.09
     },
     "SAU": {
       "USA": 0.62,
@@ -67,16 +67,16 @@
       "IND": 0.24,
       "DPRK": -0.18,
       "SAU": 1.0,
-      "UNESCO": 0.3
+      "UN": 0.3
     },
-    "UNESCO": {
+    "UN": {
       "USA": 0.35,
       "CHN": 0.35,
       "RUS": 0.35,
       "IND": 0.35,
       "DPRK": 0.1,
       "SAU": 0.35,
-      "UNESCO": 1.0
+      "UN": 1.0
     }
   },
   "grudge_memory": {
@@ -193,7 +193,7 @@
       ]
     },
     "SAU": {},
-    "UNESCO": {}
+    "UN": {}
   },
   "coalition_history": [
     {

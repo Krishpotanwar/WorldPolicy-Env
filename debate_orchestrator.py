@@ -29,6 +29,17 @@ except ImportError:
     GROQ_AVAILABLE = False
     print("⚠️  groq package not installed. Run: pip install groq")
 
+try:
+    from openai import AsyncOpenAI
+    _OPENAI_AVAILABLE = True
+except ImportError:
+    _OPENAI_AVAILABLE = False
+
+# HF Serverless Inference (OpenAI-compatible) — used when GROQ_API_KEY is absent
+_HF_API_BASE = os.environ.get("API_BASE_URL", "https://api-inference.huggingface.co/v1")
+_HF_MODEL    = os.environ.get("MODEL_NAME", "krishpotanwar/worldpolicy-grpo-3b")
+_HF_TOKEN    = os.environ.get("HF_TOKEN", "")
+
 from persona_loader import PersonaLoader
 
 # P2 — optional dynamic persona injection. live_data is a soft dependency: if the
@@ -86,7 +97,7 @@ CANNED_DEBATES: dict[str, list[dict]] = {
         _u("RUS", "oppose", "Russia cannot support operations that position NATO naval assets in the Indian Ocean under humanitarian pretexts. Our counter-proposal routes aid through BRICS channels.", ["USA", "CHN", "IND"]),
         _u("SAU", "support", "The Kingdom commits $2 billion from our sovereign wealth fund, contingent on energy infrastructure receiving priority.", ["IND", "USA"]),
         _u("DPRK", "oppose", "The imperialist powers use disasters to extend military reach. We reject any framework normalizing foreign naval presence near sovereign waters.", ["USA"]),
-        _u("UNESCO", "mediate", "Under WHC-1972 Art.11.4, I request emergency inscription of the Sundarbans Mangrove System. All parties must establish a 48-hour cultural protection corridor.", ["IND"], "WHC-1972 Art.11.4 — Emergency Inscription, Heritage in Danger"),
+        _u("UN", "mediate", "Under WHC-1972 Art.11.4, I request emergency inscription of the Sundarbans Mangrove System. All parties must establish a 48-hour cultural protection corridor.", ["IND"], "WHC-1972 Art.11.4 — Emergency Inscription, Heritage in Danger"),
     ],
     "arms_race": [
         _u("USA", "oppose", "The United States calls for immediate restraint. An arms race benefits no one at this table. Our partners expect leadership, and we will provide it.", ["RUS", "CHN"]),
@@ -95,7 +106,7 @@ CANNED_DEBATES: dict[str, list[dict]] = {
         _u("IND", "neutral", "India urges all parties to step back from the brink. We have no interest in choosing sides in a great-power arms race that threatens regional stability.", ["USA", "RUS", "CHN"]),
         _u("DPRK", "support", "The DPRK's sovereign right to self-defense is non-negotiable. We will not disarm while hostile powers maintain forward-deployed nuclear assets on our borders.", ["USA"]),
         _u("SAU", "modify", "The Kingdom calls for a regional security compact. Arms procurement destabilizes energy markets; we propose linking de-escalation milestones to energy cooperation.", ["USA", "RUS"]),
-        _u("UNESCO", "mediate", "Under Hague-1954 Art.4, I invoke the obligation of all parties to protect civilian cultural sites. Military installations near heritage zones require immediate compliance verification.", [], "Hague-1954 Art.4 — Respect for Cultural Property in Conflict"),
+        _u("UN", "mediate", "Under Hague-1954 Art.4, I invoke the obligation of all parties to protect civilian cultural sites. Military installations near heritage zones require immediate compliance verification.", [], "Hague-1954 Art.4 — Respect for Cultural Property in Conflict"),
     ],
     "trade_war": [
         _u("CHN", "oppose", "China firmly opposes unilateral economic coercion. These tariffs violate WTO principles and damage the multilateral trading system all nations depend upon.", ["USA"]),
@@ -104,22 +115,22 @@ CANNED_DEBATES: dict[str, list[dict]] = {
         _u("SAU", "modify", "The Kingdom proposes an energy stabilization framework decoupling commodity markets from the bilateral dispute. Stable energy prices benefit all parties.", ["USA", "CHN"]),
         _u("RUS", "oppose", "Russia views weaponization of trade as a threat to global economic sovereignty. We stand ready to offer alternative supply chains to affected nations.", ["USA", "CHN"]),
         _u("DPRK", "oppose", "Economic warfare is imperialism by another name. The DPRK has survived decades of sanctions; we advise all nations to build self-reliance.", ["USA"]),
-        _u("UNESCO", "mediate", "Under the 2005 Convention on Cultural Expressions, trade restrictions must not impede the free flow of cultural goods and educational materials across borders.", [], "UNESCO 2005 Convention — Protection of Cultural Expressions"),
+        _u("UN", "mediate", "Under the 2005 Convention on Cultural Expressions, trade restrictions must not impede the free flow of cultural goods and educational materials across borders.", [], "UNESCO 2005 Convention — Protection of Cultural Expressions"),
     ],
     "cultural_destruction": [
-        _u("UNESCO", "mediate", "Under UNSC-Res-2347, deliberate destruction of cultural sites constitutes a war crime. The Secretariat has documented 3 verified incidents. I request Security Council action.", [], "UNSC-Res-2347 — Heritage Destruction as War Crime"),
-        _u("USA", "support", "The United States fully supports UNESCO's assessment. Cultural destruction is a war crime and we will not stand idly by while heritage is weaponized."),
+        _u("UN", "mediate", "Under UNSC-Res-2347, deliberate destruction of cultural sites constitutes a war crime. The Secretariat has documented 3 verified incidents. I request Security Council action.", [], "UNSC-Res-2347 — Heritage Destruction as War Crime"),
+        _u("USA", "support", "The United States fully supports the UN's assessment. Cultural destruction is a war crime and we will not stand idly by while heritage is weaponized."),
         _u("RUS", "modify", "Russia supports heritage protection in principle. However, we require independent verification before accusations are formalized. We propose a joint OSCE monitoring mission.", ["USA"]),
         _u("CHN", "modify", "China insists that cultural protection must not become a pretext for military intervention. We support monitoring through the UN General Assembly framework, not the Security Council.", ["USA", "RUS"]),
         _u("IND", "support", "India, as custodian of one of the world's oldest civilizations, condemns all deliberate destruction of cultural heritage. We pledge technical restoration expertise."),
-        _u("SAU", "support", "The Kingdom has invested heavily in heritage preservation domestically. We offer $100 million to the UNESCO Emergency Cultural Fund and call on all parties to do likewise."),
+        _u("SAU", "support", "The Kingdom has invested heavily in heritage preservation domestically. We offer $100 million to the UN Emergency Cultural Fund and call on all parties to do likewise."),
         _u("DPRK", "oppose", "We reject the selective application of cultural protection norms. Where was this outrage when sanctions destroyed our cultural institutions?", ["USA"]),
     ],
     "heritage_at_risk": [
-        _u("UNESCO", "mediate", "Under WHC-1972 Art.11, I am initiating emergency procedures for three sites in the affected zone. I urge all parties to fund the Emergency Cultural Response Fund.", [], "WHC-1972 Art.11 — List of World Heritage in Danger"),
-        _u("IND", "support", "India hosts two of the three sites in danger. We fully support UNESCO's emergency procedures and commit national resources to site protection immediately."),
-        _u("USA", "support", "The United States supports the UNESCO emergency fund and will contribute $50 million in immediate response financing.", ["IND"]),
-        _u("CHN", "support", "China recognizes the urgency. We propose deploying our heritage restoration teams alongside UNESCO monitors. Cultural heritage transcends political differences.", ["IND"]),
+        _u("UN", "mediate", "Under WHC-1972 Art.11, I am initiating emergency procedures for three sites in the affected zone. I urge all parties to fund the Emergency Cultural Response Fund.", [], "WHC-1972 Art.11 — List of World Heritage in Danger"),
+        _u("IND", "support", "India hosts two of the three sites in danger. We fully support the UN's emergency procedures and commit national resources to site protection immediately."),
+        _u("USA", "support", "The United States supports the UN emergency fund and will contribute $50 million in immediate response financing.", ["IND"]),
+        _u("CHN", "support", "China recognizes the urgency. We propose deploying our heritage restoration teams alongside UN monitors. Cultural heritage transcends political differences.", ["IND"]),
         _u("RUS", "modify", "Russia supports heritage protection but questions the scope. Emergency measures must be proportionate and time-limited, not open-ended mandates.", ["IND"]),
         _u("SAU", "support", "The Kingdom pledges $75 million and logistical support for heritage evacuation. Our experience with Mada'in Saleh preservation can inform the response."),
         _u("DPRK", "neutral", "The DPRK notes its own heritage sites receive no international protection. We will abstain unless protections are applied universally.", ["USA"]),
@@ -131,7 +142,7 @@ CANNED_DEBATES: dict[str, list[dict]] = {
         _u("RUS", "oppose", "Russia opposes bailing out speculative economies at the expense of commodity-producing nations. Energy price floors must be part of any stabilization agreement.", ["USA"]),
         _u("SAU", "support", "The Kingdom is prepared to stabilize oil prices through OPEC+ production adjustments. We propose linking energy market stability to the broader recovery framework.", ["RUS"]),
         _u("DPRK", "oppose", "Global financial systems serve imperialist interests. The DPRK has insulated itself from these shocks through self-reliance. We reject externally imposed austerity.", ["USA"]),
-        _u("UNESCO", "mediate", "Under the 2015 Recommendation on Museums, economic shocks must not lead to defunding of cultural institutions. I urge emergency cultural sector stabilization.", [], "UNESCO 2015 Recommendation — Protection and Promotion of Museums"),
+        _u("UN", "mediate", "Under the 2015 Recommendation on Museums, economic shocks must not lead to defunding of cultural institutions. I urge emergency cultural sector stabilization.", [], "UNESCO 2015 Recommendation — Protection and Promotion of Museums"),
     ],
     "education_collapse": [
         _u("IND", "support", "India faces the greatest impact — 400 million students affected. We call for emergency digital infrastructure investment and teacher training programs.", ["USA", "CHN"]),
@@ -140,7 +151,7 @@ CANNED_DEBATES: dict[str, list[dict]] = {
         _u("RUS", "modify", "Russia proposes that educational recovery must respect cultural diversity. We reject any standardized Western curriculum imposed under emergency pretexts.", ["USA"]),
         _u("SAU", "support", "The Kingdom pledges $500 million through the Islamic Development Bank for educational infrastructure in affected regions.", ["IND"]),
         _u("DPRK", "oppose", "The DPRK's education system is self-sufficient. We reject foreign educational intervention as cultural imperialism disguised as aid.", ["USA"]),
-        _u("UNESCO", "mediate", "Under the 1960 Convention against Discrimination in Education, I declare an education emergency. All parties must guarantee uninterrupted access to quality education.", [], "UNESCO 1960 Convention — Against Discrimination in Education"),
+        _u("UN", "mediate", "Under the 1960 Convention against Discrimination in Education, I declare an education emergency. All parties must guarantee uninterrupted access to quality education.", [], "UNESCO 1960 Convention — Against Discrimination in Education"),
     ],
     "bloc_formation": [
         _u("USA", "oppose", "The formation of rival blocs threatens the rules-based international order. The United States calls on all parties to recommit to multilateral institutions.", ["CHN", "RUS"]),
@@ -149,7 +160,7 @@ CANNED_DEBATES: dict[str, list[dict]] = {
         _u("IND", "neutral", "India maintains strategic autonomy. We participate in multiple frameworks — Quad, BRICS, G20 — without accepting exclusionary bloc logic.", ["USA", "CHN", "RUS"]),
         _u("SAU", "modify", "The Kingdom seeks balanced relationships with all blocs. We propose an energy coordination mechanism that transcends bloc boundaries.", ["USA", "CHN"]),
         _u("DPRK", "support", "The DPRK supports any formation that challenges Western hegemony. Self-determination requires breaking free from imperialist alliance structures.", ["USA"]),
-        _u("UNESCO", "mediate", "Under the UNESCO Constitution preamble, intellectual solidarity must transcend political division. I urge all blocs to maintain cultural exchange agreements.", [], "UNESCO Constitution — Intellectual and Moral Solidarity"),
+        _u("UN", "mediate", "Under the UNESCO Constitution preamble, intellectual solidarity must transcend political division. I urge all blocs to maintain cultural exchange agreements.", [], "UNESCO Constitution — Intellectual and Moral Solidarity"),
     ],
     "alliance_rupture": [
         _u("USA", "oppose", "Alliance fractures embolden adversaries. The United States calls for immediate consultations to repair the damage before strategic competitors exploit the gap.", ["RUS", "CHN"]),
@@ -158,7 +169,7 @@ CANNED_DEBATES: dict[str, list[dict]] = {
         _u("IND", "neutral", "India notes that alliance politics have historically ignored developing-world concerns. Any new arrangement must include equitable burden-sharing.", ["USA"]),
         _u("SAU", "modify", "The Kingdom is reassessing its own security partnerships. We propose a Gulf security framework with explicit energy security guarantees.", ["USA"]),
         _u("DPRK", "support", "The collapse of imperialist alliances vindicates the DPRK's path of self-reliance. We urge all nations to reject alliance dependency.", ["USA"]),
-        _u("UNESCO", "mediate", "Under the 1945 UNESCO Constitution, cooperation in education, science, and culture must continue regardless of military alliance shifts.", [], "UNESCO Constitution Art.1 — Purposes and Functions"),
+        _u("UN", "mediate", "Under the 1945 UNESCO Constitution, cooperation in education, science, and culture must continue regardless of military alliance shifts.", [], "UNESCO Constitution Art.1 — Purposes and Functions"),
     ],
     "regime_change": [
         _u("USA", "support", "The United States supports democratic transitions that reflect the will of the people. We offer technical assistance for free and fair elections.", ["RUS", "CHN"]),
@@ -167,7 +178,7 @@ CANNED_DEBATES: dict[str, list[dict]] = {
         _u("IND", "modify", "India supports democratic governance but opposes imposed transitions. We urge all parties to allow organic political evolution and provide humanitarian aid only.", ["USA", "RUS"]),
         _u("SAU", "modify", "The Kingdom emphasizes stability. Regime transitions without institutional continuity create power vacuums that extremist groups exploit.", ["USA"]),
         _u("DPRK", "oppose", "The DPRK condemns regime change as the ultimate violation of sovereignty. We will defend our system against any external threat.", ["USA"]),
-        _u("UNESCO", "mediate", "Under the Universal Declaration on Cultural Diversity Art.4, democratic governance must protect cultural rights. I urge all parties to safeguard cultural institutions during transitions.", [], "UNESCO Universal Declaration on Cultural Diversity Art.4"),
+        _u("UN", "mediate", "Under the Universal Declaration on Cultural Diversity Art.4, democratic governance must protect cultural rights. I urge all parties to safeguard cultural institutions during transitions.", [], "UNESCO Universal Declaration on Cultural Diversity Art.4"),
     ],
     "military_escalation": [
         _u("USA", "oppose", "The United States demands an immediate ceasefire. Further escalation risks triggering mutual defense obligations across multiple alliances.", ["RUS", "CHN"]),
@@ -176,7 +187,7 @@ CANNED_DEBATES: dict[str, list[dict]] = {
         _u("IND", "neutral", "India urges maximum restraint. Any military escalation in this region directly threatens our security and economic interests.", ["USA", "RUS"]),
         _u("SAU", "modify", "The Kingdom proposes an energy security corridor agreement as a confidence-building measure. Economic interdependence is the strongest deterrent.", ["USA", "RUS"]),
         _u("DPRK", "support", "The DPRK stands in solidarity with nations defending their sovereignty against imperialist aggression. Military readiness is a sovereign right.", ["USA"]),
-        _u("UNESCO", "mediate", "Under Hague-1954 Protocol I, all parties in armed conflict must protect cultural property. I invoke the enhanced protection regime for 12 heritage sites in the conflict zone.", [], "Hague-1954 Protocol I — Protection of Cultural Property in Armed Conflict"),
+        _u("UN", "mediate", "Under Hague-1954 Protocol I, all parties in armed conflict must protect cultural property. I invoke the enhanced protection regime for 12 heritage sites in the conflict zone.", [], "Hague-1954 Protocol I — Protection of Cultural Property in Armed Conflict"),
     ],
     "war_outbreak": [
         _u("USA", "oppose", "The United States calls for an immediate cessation of hostilities. We are activating our diplomatic channels and placing forces on heightened alert as a deterrent.", ["RUS"]),
@@ -185,7 +196,7 @@ CANNED_DEBATES: dict[str, list[dict]] = {
         _u("IND", "neutral", "India calls for restraint from all parties. We are prepared to offer diplomatic mediation but will not be drawn into external conflicts.", ["USA", "RUS"]),
         _u("SAU", "modify", "The Kingdom calls for an emergency OPEC+ session to stabilize energy markets. War-driven oil price spikes harm the global economy indiscriminately.", ["USA", "RUS"]),
         _u("DPRK", "support", "The DPRK notes that Western powers have started far more wars than they have prevented. We stand with nations defending their sovereignty.", ["USA"]),
-        _u("UNESCO", "mediate", "Under the 1954 Hague Convention and both Protocols, I invoke emergency cultural protection measures. All combatants must create exclusion zones around heritage sites.", [], "Hague-1954 Convention — Protection of Cultural Property; Second Protocol Art.6"),
+        _u("UN", "mediate", "Under the 1954 Hague Convention and both Protocols, I invoke emergency cultural protection measures. All combatants must create exclusion zones around heritage sites.", [], "Hague-1954 Convention — Protection of Cultural Property; Second Protocol Art.6"),
     ],
     "sanctions": [
         _u("USA", "support", "These sanctions target specific entities responsible for documented violations. They are precise, proportionate, and consistent with international law.", ["RUS", "CHN"]),
@@ -194,7 +205,7 @@ CANNED_DEBATES: dict[str, list[dict]] = {
         _u("IND", "modify", "India acknowledges concerns but notes that broad sanctions disrupt our trade relationships. We call for targeted measures that minimize civilian harm.", ["USA", "RUS"]),
         _u("SAU", "modify", "The Kingdom proposes a humanitarian exemption corridor ensuring essential goods — food, medicine, energy — are excluded from any sanctions regime.", ["USA"]),
         _u("DPRK", "oppose", "The DPRK has endured the most severe sanctions on earth for decades. Sanctions are siege warfare against civilian populations.", ["USA"]),
-        _u("UNESCO", "mediate", "Under the 1970 Convention on Cultural Property, sanctions must not impede the transfer of cultural materials for preservation and education.", [], "UNESCO 1970 Convention — Means of Prohibiting Illicit Import/Export of Cultural Property"),
+        _u("UN", "mediate", "Under the 1970 Convention on Cultural Property, sanctions must not impede the transfer of cultural materials for preservation and education.", [], "UNESCO 1970 Convention — Means of Prohibiting Illicit Import/Export of Cultural Property"),
     ],
 }
 
@@ -209,14 +220,14 @@ CANNED_REBUTTALS: dict[str, dict[int, list[dict]]] = {
          _u("CHN", "modify", "AIIB development financing should complement, not compete with, bilateral aid. We propose a dual-track approach.", ["USA", "IND", "RUS"]),
          _u("SAU", "support", "The Kingdom increases our commitment to $3.5 billion with energy infrastructure priority.", ["IND"]),
          _u("DPRK", "oppose", "This 'coordination center' is rebranded military occupation. The DPRK will not legitimize it.", ["USA"]),
-         _u("UNESCO", "mediate", "The Secretariat notes convergence. I propose a mandatory 72-hour cultural impact assessment before heavy machinery enters the heritage buffer zone.", ["IND"], "WHC-1972 Operational Guidelines Para.177")],
+         _u("UN", "mediate", "The Secretariat notes convergence. I propose a mandatory 72-hour cultural impact assessment before heavy machinery enters the heritage buffer zone.", ["IND"], "WHC-1972 Operational Guidelines Para.177")],
         [_u("IND", "support", "India formally accepts the civilian framework. Sign the memorandum within 24 hours — the cyclone season does not wait.", ["USA", "RUS", "CHN"]),
          _u("RUS", "modify", "Russia signs with one reservation: extension beyond 90 days requires a new Security Council mandate.", ["USA", "IND"]),
          _u("USA", "support", "The 90-day sunset clause is reasonable. Full transparency reporting every 30 days. We call the vote.", ["RUS", "IND"]),
          _u("CHN", "support", "China supports the amended resolution. $1.2 billion through AIIB for long-term reconstruction.", ["RUS", "IND", "USA"]),
          _u("SAU", "support", "The Kingdom votes in favor. Energy reconstruction investment will coordinate with the civilian framework.", ["IND"]),
          _u("DPRK", "oppose", "90 days, 900 days — a sunset clause means nothing when the sun never sets on imperialist ambitions.", ["USA"]),
-         _u("UNESCO", "mediate", "The Secretariat welcomes this resolution. Emergency inscription is active, monitoring deploys in 48 hours.", ["IND"], "WHC-1972 Art.11.4")],
+         _u("UN", "mediate", "The Secretariat welcomes this resolution. Emergency inscription is active, monitoring deploys in 48 hours.", ["IND"], "WHC-1972 Art.11.4")],
     ),
     "arms_race": _rebuttal_set(
         [_u("USA", "modify", "The US proposes a mutual verification framework — both sides reduce forward deployments simultaneously, monitored by IAEA.", ["RUS", "CHN"]),
@@ -225,14 +236,14 @@ CANNED_REBUTTALS: dict[str, dict[int, list[dict]]] = {
          _u("IND", "modify", "India insists that any arms control framework must address the asymmetry between nuclear and non-nuclear states.", ["USA", "RUS", "CHN"]),
          _u("DPRK", "oppose", "Verification frameworks are intelligence-gathering operations. The DPRK will not open its facilities to hostile inspectors.", ["USA"]),
          _u("SAU", "support", "The Kingdom endorses the verification framework and offers to host negotiations in Riyadh as a neutral venue.", ["USA", "RUS"]),
-         _u("UNESCO", "mediate", "I note progress toward de-escalation. The Secretariat will document cultural sites within the proposed buffer zone for protected status.", [], "Hague-1954 Art.4")],
+         _u("UN", "mediate", "I note progress toward de-escalation. The Secretariat will document cultural sites within the proposed buffer zone for protected status.", [], "Hague-1954 Art.4")],
         [_u("RUS", "support", "Russia accepts the verification framework with the buffer zone provision. We propose a 6-month implementation timeline.", ["USA"]),
          _u("USA", "support", "The United States agrees to the 6-month timeline. We begin mutual drawdowns within 30 days of signing.", ["RUS"]),
          _u("CHN", "support", "China will co-sponsor the resolution and contribute technical monitors to the verification team.", ["USA", "RUS"]),
          _u("IND", "support", "India welcomes the consensus and will participate in the monitoring framework as a non-aligned observer.", ["USA", "RUS", "CHN"]),
          _u("DPRK", "oppose", "The DPRK will not be bound by agreements between powers that threaten our existence.", ["USA"]),
          _u("SAU", "support", "The Kingdom reaffirms its support. De-escalation stabilizes energy markets — a win for all parties.", ["USA", "RUS"]),
-         _u("UNESCO", "mediate", "This chamber has demonstrated that dialogue can prevail. The Secretariat will monitor cultural heritage compliance throughout implementation.", [], "Hague-1954 Second Protocol Art.6")],
+         _u("UN", "mediate", "This chamber has demonstrated that dialogue can prevail. The Secretariat will monitor cultural heritage compliance throughout implementation.", [], "Hague-1954 Second Protocol Art.6")],
     ),
     "trade_war": _rebuttal_set(
         [_u("CHN", "modify", "China is prepared to make targeted concessions on intellectual property enforcement if the US rolls back tariffs on consumer goods.", ["USA"]),
@@ -241,30 +252,30 @@ CANNED_REBUTTALS: dict[str, dict[int, list[dict]]] = {
          _u("RUS", "modify", "Russia proposes alternative trade corridors that reduce dependency on any single bilateral relationship.", ["USA", "CHN"]),
          _u("SAU", "support", "The Kingdom supports any framework that stabilizes global commodity markets. Energy must be excluded from tariff escalation.", ["USA", "CHN"]),
          _u("DPRK", "oppose", "Phased concessions are phased surrender. Economic sovereignty cannot be negotiated away in instalments.", ["USA"]),
-         _u("UNESCO", "mediate", "Trade disputes must not impede cultural exchange. I urge exemptions for educational and cultural materials.", [], "UNESCO 2005 Convention Art.16")],
+         _u("UN", "mediate", "Trade disputes must not impede cultural exchange. I urge exemptions for educational and cultural materials.", [], "UNESCO 2005 Convention Art.16")],
         [_u("USA", "support", "The United States accepts the phased framework. We commit to rolling back 50% of tariffs in the first phase.", ["CHN"]),
          _u("CHN", "support", "China reciprocates with enhanced IP enforcement and opens three additional sectors to foreign investment.", ["USA"]),
          _u("IND", "support", "India commends both parties. We propose hosting a follow-up summit in New Delhi to formalize the agreement.", ["USA", "CHN"]),
          _u("RUS", "support", "Russia supports the resolution. Stable trade benefits commodity exporters and importers alike.", ["USA", "CHN"]),
          _u("SAU", "support", "The Kingdom welcomes the de-escalation. We confirm energy market stabilization measures.", ["USA", "CHN"]),
          _u("DPRK", "oppose", "The DPRK notes this agreement benefits the powerful at the expense of smaller economies.", ["USA", "CHN"]),
-         _u("UNESCO", "mediate", "The Secretariat welcomes this resolution. Cultural cooperation agreements should be signed alongside trade deals.", [], "UNESCO 2005 Convention Art.20")],
+         _u("UN", "mediate", "The Secretariat welcomes this resolution. Cultural cooperation agreements should be signed alongside trade deals.", [], "UNESCO 2005 Convention Art.20")],
     ),
     "cultural_destruction": _rebuttal_set(
-        [_u("USA", "support", "The US proposes a rapid-deployment cultural protection force under UNESCO command with logistical support from willing nations.", ["RUS"]),
+        [_u("USA", "support", "The US proposes a rapid-deployment cultural protection force under UN command with logistical support from willing nations.", ["RUS"]),
          _u("RUS", "modify", "A protection force is acceptable only under strict UN mandate — not NATO command renamed. Russia demands joint oversight.", ["USA"]),
          _u("CHN", "support", "China supports the protection force concept. We offer satellite imagery and AI documentation technology.", ["USA", "RUS"]),
          _u("IND", "support", "India commits archaeological restoration teams and 3D digital preservation equipment.", ["USA"]),
          _u("SAU", "support", "The Kingdom pledges an additional $200 million for the emergency cultural protection fund."),
          _u("DPRK", "oppose", "Protection forces are occupation forces. Cultural sites have survived millennia without foreign soldiers guarding them.", ["USA"]),
-         _u("UNESCO", "mediate", "I welcome the convergence. The protection force will operate under the Blue Shield framework with strict neutrality provisions.", [], "UNSC-Res-2347 Para.17")],
+         _u("UN", "mediate", "I welcome the convergence. The protection force will operate under the Blue Shield framework with strict neutrality provisions.", [], "UNSC-Res-2347 Para.17")],
         [_u("RUS", "support", "Russia accepts the Blue Shield framework with joint oversight. We will contribute monitors and logistical assets.", ["USA"]),
          _u("USA", "support", "The United States signs on to the Blue Shield deployment. Joint oversight addresses all parties' concerns.", ["RUS"]),
          _u("CHN", "support", "China fully endorses the resolution. Our technology contribution is ready for immediate deployment.", ["USA", "RUS"]),
          _u("IND", "support", "India's restoration teams will deploy within 72 hours of the resolution passing."),
          _u("SAU", "support", "The Kingdom votes in favor and increases its pledge to $300 million."),
          _u("DPRK", "oppose", "The DPRK abstains. We will not legitimize external cultural mandates but will not block the resolution."),
-         _u("UNESCO", "mediate", "This is a historic moment. The Blue Shield rapid deployment is activated. All parties will be held to their commitments.", [], "UNSC-Res-2347; Blue Shield Protocol")],
+         _u("UN", "mediate", "This is a historic moment. The Blue Shield rapid deployment is activated. All parties will be held to their commitments.", [], "UNSC-Res-2347; Blue Shield Protocol")],
     ),
     "heritage_at_risk": _rebuttal_set(
         [_u("IND", "support", "India is establishing a 50km cultural protection perimeter around the endangered sites. International assistance is welcome within this framework."),
@@ -273,14 +284,14 @@ CANNED_REBUTTALS: dict[str, dict[int, list[dict]]] = {
          _u("RUS", "modify", "Russia supports the emergency measures but insists on a 6-month review of the Danger List placement.", ["IND"]),
          _u("SAU", "support", "The Kingdom matches the US contribution. $100 million for immediate heritage stabilization.", ["IND", "USA"]),
          _u("DPRK", "neutral", "The DPRK will not obstruct but reiterates that universal application is the only just standard."),
-         _u("UNESCO", "mediate", "I note broad consensus. The emergency inscription is formalized. Monitoring teams deploy within 48 hours.", ["IND"], "WHC-1972 Art.11.4")],
-        [_u("IND", "support", "India confirms all protection perimeters are in place. We invite UNESCO monitors to begin their assessment.", ["USA", "CHN"]),
+         _u("UN", "mediate", "I note broad consensus. The emergency inscription is formalized. Monitoring teams deploy within 48 hours.", ["IND"], "WHC-1972 Art.11.4")],
+        [_u("IND", "support", "India confirms all protection perimeters are in place. We invite UN monitors to begin their assessment.", ["USA", "CHN"]),
          _u("USA", "support", "The United States has transferred the first $25 million tranche. Satellite monitoring is active.", ["IND"]),
-         _u("CHN", "support", "Drone surveys are complete. Data has been shared with UNESCO and all member states.", ["IND"]),
+         _u("CHN", "support", "Drone surveys are complete. Data has been shared with the UN and all member states.", ["IND"]),
          _u("RUS", "support", "Russia accepts the emergency inscription with the 6-month review provision. We contribute technical expertise.", ["IND"]),
          _u("SAU", "support", "The Kingdom's funds are deployed. Saudi heritage engineers are en route.", ["IND"]),
          _u("DPRK", "neutral", "The DPRK notes the resolution and maintains its position on universal application."),
-         _u("UNESCO", "mediate", "All commitments are logged. The heritage protection corridor is operational. This chamber has acted decisively.", ["IND"], "WHC-1972 Operational Guidelines Para.177")],
+         _u("UN", "mediate", "All commitments are logged. The heritage protection corridor is operational. This chamber has acted decisively.", ["IND"], "WHC-1972 Operational Guidelines Para.177")],
     ),
     "gdp_shock": _rebuttal_set(
         [_u("USA", "modify", "The US proposes a G20 emergency lending facility with fast-disbursement provisions. Conditionality must be streamlined.", ["CHN"]),
@@ -289,14 +300,14 @@ CANNED_REBUTTALS: dict[str, dict[int, list[dict]]] = {
          _u("RUS", "modify", "Russia insists that energy price floors are included. We cannot support recovery that destabilizes commodity producers.", ["USA"]),
          _u("SAU", "support", "The Kingdom supports energy price stabilization through OPEC+ adjustments. Coordinated action prevents a spiral.", ["RUS"]),
          _u("DPRK", "oppose", "International lending institutions serve creditor nations. The DPRK rejects any framework that increases foreign debt dependency.", ["USA"]),
-         _u("UNESCO", "mediate", "Cultural sector emergency funding must be included. Museums and heritage sites face permanent closures without immediate support.", [], "UNESCO 2015 Recommendation Para.18")],
+         _u("UN", "mediate", "Cultural sector emergency funding must be included. Museums and heritage sites face permanent closures without immediate support.", [], "UNESCO 2015 Recommendation Para.18")],
         [_u("CHN", "support", "China confirms the $50 billion AIIB commitment. Joint lending begins within 30 days.", ["USA"]),
          _u("USA", "support", "The United States matches with IMF special drawing rights allocation. We call the vote.", ["CHN"]),
          _u("IND", "support", "India thanks the chamber. The 24-month moratorium for developing nations is a lifeline.", ["USA", "CHN"]),
          _u("RUS", "support", "Energy price floors are included. Russia will participate in the recovery framework.", ["USA", "SAU"]),
          _u("SAU", "support", "The Kingdom votes in favor. OPEC+ stabilization measures take effect immediately.", ["RUS"]),
          _u("DPRK", "oppose", "The DPRK maintains its objection but will not block consensus."),
-         _u("UNESCO", "mediate", "Cultural sector provisions are included. The Secretariat will monitor implementation across all member states.", [], "UNESCO 2015 Recommendation Para.22")],
+         _u("UN", "mediate", "Cultural sector provisions are included. The Secretariat will monitor implementation across all member states.", [], "UNESCO 2015 Recommendation Para.22")],
     ),
     "education_collapse": _rebuttal_set(
         [_u("IND", "support", "India proposes a South-South digital education platform built on open-source technology — no single vendor dependency.", ["USA", "CHN"]),
@@ -305,14 +316,14 @@ CANNED_REBUTTALS: dict[str, dict[int, list[dict]]] = {
          _u("RUS", "support", "Russia supports the multilingual platform. Educational content must respect cultural diversity.", ["IND"]),
          _u("SAU", "support", "The Kingdom increases its pledge to $750 million for digital infrastructure in underserved regions.", ["IND"]),
          _u("DPRK", "oppose", "Open platforms are surveillance platforms. The DPRK will develop its own educational technology.", ["USA"]),
-         _u("UNESCO", "mediate", "The platform must meet the Education 2030 Framework quality standards. I will convene a technical advisory panel.", [], "UNESCO Education 2030 Framework for Action")],
+         _u("UN", "mediate", "The platform must meet the Education 2030 Framework quality standards. I will convene a technical advisory panel.", [], "UNESCO Education 2030 Framework for Action")],
         [_u("IND", "support", "India confirms the open-source platform architecture. Beta testing begins in 90 days.", ["USA", "CHN"]),
          _u("USA", "support", "The US commits technical teams to the quality assurance framework. We call the vote.", ["IND"]),
          _u("CHN", "support", "China ratifies the open-source approach. Technology transfer begins immediately.", ["IND"]),
          _u("RUS", "support", "Russia will contribute Russian-language educational content to the platform.", ["IND"]),
          _u("SAU", "support", "The Kingdom's funds are committed. Arabic-language content will be our contribution.", ["IND"]),
          _u("DPRK", "oppose", "The DPRK does not participate but does not block the resolution."),
-         _u("UNESCO", "mediate", "The education emergency response is formalized. All commitments will be tracked through the Secretariat.", [], "UNESCO 1960 Convention Art.4")],
+         _u("UN", "mediate", "The education emergency response is formalized. All commitments will be tracked through the Secretariat.", [], "UNESCO 1960 Convention Art.4")],
     ),
     "bloc_formation": _rebuttal_set(
         [_u("CHN", "modify", "China proposes a cross-bloc economic coordination mechanism. Competition is healthy; confrontation is not.", ["USA", "RUS"]),
@@ -321,14 +332,14 @@ CANNED_REBUTTALS: dict[str, dict[int, list[dict]]] = {
          _u("IND", "support", "India volunteers to chair the cross-bloc coordination working group as a multi-aligned nation.", ["USA", "CHN", "RUS"]),
          _u("SAU", "support", "The Kingdom hosts the inaugural session. Energy coordination transcends bloc boundaries.", ["USA", "CHN"]),
          _u("DPRK", "modify", "The DPRK will observe but not commit. Cross-bloc mechanisms must not become tools of coercion.", ["USA"]),
-         _u("UNESCO", "mediate", "Cultural exchange programs across blocs prevent intellectual fragmentation. I propose a joint cultural heritage database.", [], "UNESCO Constitution — Intellectual Solidarity")],
+         _u("UN", "mediate", "Cultural exchange programs across blocs prevent intellectual fragmentation. I propose a joint cultural heritage database.", [], "UNESCO Constitution — Intellectual Solidarity")],
         [_u("USA", "support", "The United States endorses the cross-bloc coordination mechanism. Shared challenges require shared solutions.", ["CHN", "RUS"]),
          _u("CHN", "support", "China commits to the framework. The first agenda item: a joint climate action protocol.", ["USA"]),
          _u("RUS", "support", "Russia ratifies. Energy cooperation begins within 60 days.", ["USA", "CHN"]),
          _u("IND", "support", "India accepts the chair position. The first session convenes in 30 days.", ["USA", "CHN", "RUS"]),
          _u("SAU", "support", "The Kingdom confirms Riyadh as the venue. All logistics are in place.", ["IND"]),
          _u("DPRK", "neutral", "The DPRK will send observers to the first session."),
-         _u("UNESCO", "mediate", "The Secretariat will establish the joint cultural heritage database as agreed. Bloc formation need not mean cultural division.", [], "UNESCO Constitution Art.1")],
+         _u("UN", "mediate", "The Secretariat will establish the joint cultural heritage database as agreed. Bloc formation need not mean cultural division.", [], "UNESCO Constitution Art.1")],
     ),
     "alliance_rupture": _rebuttal_set(
         [_u("USA", "modify", "The US proposes a new security compact with burden-sharing reform. Alliance obligations must be reciprocal.", ["RUS"]),
@@ -337,14 +348,14 @@ CANNED_REBUTTALS: dict[str, dict[int, list[dict]]] = {
          _u("IND", "support", "India supports a reformed security architecture with equitable burden-sharing for developing nations.", ["USA"]),
          _u("SAU", "modify", "The Kingdom insists on explicit energy security provisions in any new compact.", ["USA"]),
          _u("DPRK", "oppose", "New compacts, old compacts — the structure of hegemony remains the same.", ["USA"]),
-         _u("UNESCO", "mediate", "Cultural cooperation agreements must be preserved regardless of security alliance changes.", [], "UNESCO Constitution Art.1")],
+         _u("UN", "mediate", "Cultural cooperation agreements must be preserved regardless of security alliance changes.", [], "UNESCO Constitution Art.1")],
         [_u("USA", "support", "The United States endorses the reformed security compact with burden-sharing and energy security provisions.", ["RUS", "SAU"]),
          _u("RUS", "support", "Russia accepts the new framework. We commit to confidence-building measures within 90 days.", ["USA"]),
          _u("CHN", "support", "China signs on. Climate security provisions make this framework forward-looking.", ["USA", "RUS"]),
          _u("IND", "support", "India ratifies. Equitable burden-sharing was the key breakthrough.", ["USA"]),
          _u("SAU", "support", "The Kingdom votes in favor. Energy security provisions protect all parties.", ["USA", "RUS"]),
          _u("DPRK", "oppose", "The DPRK does not recognize this compact but will not actively obstruct.", ["USA"]),
-         _u("UNESCO", "mediate", "Cultural cooperation provisions are embedded. The Secretariat will monitor compliance.", [], "UNESCO Constitution Art.1")],
+         _u("UN", "mediate", "Cultural cooperation provisions are embedded. The Secretariat will monitor compliance.", [], "UNESCO Constitution Art.1")],
     ),
     "regime_change": _rebuttal_set(
         [_u("USA", "modify", "The US pivots to supporting an inclusive national dialogue facilitated by the UN. No external imposition of governance models.", ["RUS", "CHN"]),
@@ -353,14 +364,14 @@ CANNED_REBUTTALS: dict[str, dict[int, list[dict]]] = {
          _u("IND", "support", "India endorses the UN-facilitated approach. We offer peacekeeping personnel from our experienced forces.", ["USA", "RUS"]),
          _u("SAU", "modify", "The Kingdom insists on stability guarantees. Transitional governance must maintain institutional continuity.", ["USA"]),
          _u("DPRK", "oppose", "Foreign-facilitated dialogue is foreign interference by committee. Let nations resolve their own governance.", ["USA"]),
-         _u("UNESCO", "mediate", "Cultural institutions must be protected during any transition. I invoke emergency measures for national museums and archives.", [], "UNESCO Universal Declaration on Cultural Diversity Art.4")],
+         _u("UN", "mediate", "Cultural institutions must be protected during any transition. I invoke emergency measures for national museums and archives.", [], "UNESCO Universal Declaration on Cultural Diversity Art.4")],
         [_u("USA", "support", "The United States endorses the UN-facilitated national dialogue with full representation guarantees.", ["RUS"]),
          _u("RUS", "support", "Russia accepts. The framework respects sovereignty while enabling peaceful transition.", ["USA"]),
          _u("CHN", "support", "China fully supports the resolution. Non-interference principles are preserved.", ["USA", "RUS"]),
          _u("IND", "support", "India commits peacekeeping assets. The UN framework provides the necessary legitimacy.", ["USA", "RUS"]),
          _u("SAU", "support", "The Kingdom votes in favor. Institutional continuity provisions address our concerns.", ["USA"]),
          _u("DPRK", "oppose", "The DPRK's objection is recorded. We will not block consensus.", ["USA"]),
-         _u("UNESCO", "mediate", "Cultural protection measures are activated. The Secretariat will monitor heritage sites throughout the transition.", [], "UNESCO Universal Declaration on Cultural Diversity Art.7")],
+         _u("UN", "mediate", "Cultural protection measures are activated. The Secretariat will monitor heritage sites throughout the transition.", [], "UNESCO Universal Declaration on Cultural Diversity Art.7")],
     ),
     "military_escalation": _rebuttal_set(
         [_u("RUS", "modify", "Russia proposes a 72-hour ceasefire to allow diplomatic channels to function. Military positions will hold but not advance.", ["USA"]),
@@ -369,14 +380,14 @@ CANNED_REBUTTALS: dict[str, dict[int, list[dict]]] = {
          _u("IND", "support", "India supports the ceasefire. We offer communication back-channels through our diplomatic corps.", ["USA", "RUS"]),
          _u("SAU", "modify", "The Kingdom proposes linking the ceasefire to energy corridor guarantees. Economic interdependence reinforces peace.", ["USA", "RUS"]),
          _u("DPRK", "oppose", "Ceasefires without addressing root causes only freeze injustice in place.", ["USA"]),
-         _u("UNESCO", "mediate", "During the ceasefire, all parties must grant access for cultural heritage damage assessment teams.", [], "Hague-1954 Protocol I Art.2")],
+         _u("UN", "mediate", "During the ceasefire, all parties must grant access for cultural heritage damage assessment teams.", [], "Hague-1954 Protocol I Art.2")],
         [_u("USA", "support", "The ceasefire holds. The United States commits to good-faith negotiations within the 72-hour window.", ["RUS"]),
          _u("RUS", "support", "Russia confirms the ceasefire and accepts joint monitoring. Negotiations proceed.", ["USA"]),
          _u("CHN", "support", "China confirms Beijing as the negotiation venue. All parties are welcome.", ["USA", "RUS"]),
          _u("IND", "support", "India's back-channels are active. We see grounds for optimism.", ["USA", "RUS"]),
          _u("SAU", "support", "Energy corridor guarantees are part of the framework. The Kingdom votes in favor.", ["USA", "RUS"]),
          _u("DPRK", "oppose", "The DPRK records its objection but does not break consensus.", ["USA"]),
-         _u("UNESCO", "mediate", "Heritage assessment teams are deployed. The Secretariat will report on cultural property status within 48 hours.", [], "Hague-1954 Protocol I Art.3")],
+         _u("UN", "mediate", "Heritage assessment teams are deployed. The Secretariat will report on cultural property status within 48 hours.", [], "Hague-1954 Protocol I Art.3")],
     ),
     "war_outbreak": _rebuttal_set(
         [_u("USA", "modify", "The US proposes an immediate humanitarian corridor and a 48-hour unconditional ceasefire as a starting point.", ["RUS"]),
@@ -385,14 +396,14 @@ CANNED_REBUTTALS: dict[str, dict[int, list[dict]]] = {
          _u("IND", "support", "India volunteers field hospitals and evacuation support. Humanitarian access must be unconditional.", ["USA", "RUS"]),
          _u("SAU", "modify", "The Kingdom proposes emergency oil price stabilization to prevent economic collapse alongside the ceasefire.", ["USA", "RUS"]),
          _u("DPRK", "oppose", "Humanitarian corridors become intelligence corridors. We propose a fully neutral monitoring force.", ["USA"]),
-         _u("UNESCO", "mediate", "Under the 1954 Hague Convention, cultural property must be marked and protected in the humanitarian corridor.", [], "Hague-1954 Convention Art.6")],
+         _u("UN", "mediate", "Under the 1954 Hague Convention, cultural property must be marked and protected in the humanitarian corridor.", [], "Hague-1954 Convention Art.6")],
         [_u("RUS", "support", "Russia agrees to the neutral monitoring force. The ceasefire can proceed.", ["USA"]),
          _u("USA", "support", "The United States accepts neutral monitoring. We commit to the 48-hour ceasefire starting midnight.", ["RUS"]),
          _u("CHN", "support", "China confirms logistical deployment. Peace is within reach if both sides hold firm.", ["USA", "RUS"]),
          _u("IND", "support", "India's field hospitals deploy within 24 hours. We call on all parties to hold the ceasefire.", ["USA", "RUS"]),
          _u("SAU", "support", "Oil stabilization measures are active. The Kingdom votes for the ceasefire resolution.", ["USA", "RUS"]),
          _u("DPRK", "neutral", "The neutral monitoring force addresses our concern. The DPRK will not obstruct.", ["USA"]),
-         _u("UNESCO", "mediate", "Cultural property markers are being placed. This ceasefire must hold. The Secretariat will verify compliance.", [], "Hague-1954 Convention Art.7")],
+         _u("UN", "mediate", "Cultural property markers are being placed. This ceasefire must hold. The Secretariat will verify compliance.", [], "Hague-1954 Convention Art.7")],
     ),
     "sanctions": _rebuttal_set(
         [_u("USA", "modify", "The US agrees to add humanitarian exemptions for food and medicine. Targeted sanctions remain on designated entities.", ["RUS"]),
@@ -401,14 +412,14 @@ CANNED_REBUTTALS: dict[str, dict[int, list[dict]]] = {
          _u("IND", "support", "India endorses humanitarian exemptions. Our trade partners need predictability — the sunset clause helps.", ["USA", "RUS"]),
          _u("SAU", "support", "The Kingdom's humanitarian corridor proposal is adopted. Energy exemptions must also be explicit.", ["USA"]),
          _u("DPRK", "oppose", "Exemptions are crumbs from the table of the powerful. Full sanctions lifting is the only just outcome.", ["USA"]),
-         _u("UNESCO", "mediate", "Cultural materials must be explicitly exempted. I invoke the 1970 Convention protections.", [], "UNESCO 1970 Convention Art.7")],
+         _u("UN", "mediate", "Cultural materials must be explicitly exempted. I invoke the 1970 Convention protections.", [], "UNESCO 1970 Convention Art.7")],
         [_u("USA", "support", "The United States accepts the 90-day review with humanitarian and energy exemptions. We call the vote.", ["RUS", "SAU"]),
          _u("RUS", "support", "Russia votes in favor. The review mechanism and exemptions address our core concerns.", ["USA"]),
          _u("CHN", "support", "China supports the amended sanctions framework. Regular review ensures accountability.", ["USA", "RUS"]),
          _u("IND", "support", "India votes in favor. Predictability and humanitarian protections are preserved.", ["USA", "RUS"]),
          _u("SAU", "support", "The Kingdom confirms energy exemptions are in effect. We vote in favor.", ["USA"]),
          _u("DPRK", "oppose", "The DPRK's fundamental objection stands. But we do not block the consensus.", ["USA"]),
-         _u("UNESCO", "mediate", "Cultural exemptions are confirmed. The Secretariat will monitor compliance with cultural property protections.", [], "UNESCO 1970 Convention Art.9")],
+         _u("UN", "mediate", "Cultural exemptions are confirmed. The Secretariat will monitor compliance with cultural property protections.", [], "UNESCO 1970 Convention Art.9")],
     ),
 }
 
@@ -443,17 +454,28 @@ class DebateOrchestrator:
         {"id": "IND",    "name": "India",           "tint": "#f59e0b"},
         {"id": "DPRK",   "name": "North Korea",     "tint": "#ef4444"},
         {"id": "SAU",    "name": "Saudi Arabia",    "tint": "#22c55e"},
-        {"id": "UNESCO", "name": "UNESCO",          "tint": "#14b8a6"},
+        {"id": "UN",     "name": "United Nations",   "tint": "#eab308"},
     ]
 
     def __init__(self):
         self.loader = PersonaLoader()
         self._round_counter = 0
         self._last_debate_step = -DEBATE_RATE_LIMIT_STEPS  # allow first debate immediately
+
+        # Primary: Groq (Llama-70B, fast, best quality)
         api_key = os.environ.get("GROQ_API_KEY", "")
         self._groq_client = AsyncGroq(api_key=api_key) if GROQ_AVAILABLE and api_key else None
-        self._use_live = bool(self._groq_client)
-        print(f"DebateOrchestrator initialized. Live Groq: {self._use_live}")
+
+        # Fallback: trained model via HF Serverless Inference (OpenAI-compatible)
+        self._hf_client = (
+            AsyncOpenAI(base_url=_HF_API_BASE, api_key=_HF_TOKEN)
+            if _OPENAI_AVAILABLE and _HF_TOKEN and not self._groq_client
+            else None
+        )
+
+        self._use_live  = bool(self._groq_client or self._hf_client)
+        self._use_groq  = bool(self._groq_client)
+        print(f"DebateOrchestrator initialized. Live Groq: {self._use_groq}  HF model: {bool(self._hf_client)}")
 
     def can_run_debate(self, current_step: int) -> bool:
         """Rate limit: max 1 debate per DEBATE_RATE_LIMIT_STEPS simulation steps."""
@@ -499,6 +521,58 @@ class DebateOrchestrator:
         }
         sanitized["_latency_ms"] = int(elapsed * 1000)
         sanitized["_model"] = GROQ_MODEL
+        return sanitized
+
+    async def _call_hf_model(self, system_prompt: str, agent_id: str) -> dict:
+        """Call trained model via HF Serverless Inference (OpenAI-compatible endpoint)."""
+        if not self._hf_client:
+            raise RuntimeError("HF client not initialized")
+
+        start = time.time()
+        # Condense prompt to fit 3B model context — take last 800 chars
+        condensed = system_prompt[-800:] if len(system_prompt) > 800 else system_prompt
+        prompt = (
+            f"{condensed}\n\n"
+            f"Respond as {agent_id} in JSON with keys: text, stance, mentioned_countries, authority_citation.\n"
+            f'stance must be one of: support, oppose, modify, neutral, mediate\n'
+            "JSON only, no markdown:"
+        )
+        try:
+            resp = await self._hf_client.chat.completions.create(
+                model=_HF_MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=200,
+                temperature=0.7,
+            )
+            raw_text = (resp.choices[0].message.content or "").strip()
+        except Exception as e:
+            return {
+                "text": f"{agent_id} considers the situation carefully.",
+                "stance": "neutral",
+                "mentioned_countries": [],
+                "authority_citation": None,
+                "_latency_ms": int((time.time() - start) * 1000),
+                "_model": _HF_MODEL,
+            }
+
+        import re
+        match = re.search(r"\{.*\}", raw_text, re.DOTALL)
+        try:
+            parsed = json.loads(match.group()) if match else {}
+        except (json.JSONDecodeError, AttributeError):
+            parsed = {}
+
+        sanitized = {
+            "text": str(parsed.get("text", f"{agent_id} weighs the proposal."))[:MAX_UTTERANCE_TEXT_LEN],
+            "stance": parsed.get("stance", "neutral") if parsed.get("stance") in VALID_STANCES else "neutral",
+            "mentioned_countries": [
+                c for c in parsed.get("mentioned_countries", [])
+                if isinstance(c, str) and len(c) <= 10
+            ][:10],
+            "authority_citation": str(parsed.get("authority_citation", ""))[:200] if parsed.get("authority_citation") else None,
+        }
+        sanitized["_latency_ms"] = int((time.time() - start) * 1000)
+        sanitized["_model"] = _HF_MODEL
         return sanitized
 
     def _get_canned(self, crisis_type: str, agent_order: list[str], round_num: int = 1) -> list[dict]:
@@ -551,21 +625,18 @@ class DebateOrchestrator:
         current_step = world_state.get("step", 0)
         self._last_debate_step = current_step
 
-        # Determine speaker order: involved first, then peripheral, skip uninvolved (not UNESCO)
+        # Determine speaker order: involved first, then peripheral, skip uninvolved (not UN)
         involved = involvement.get("involved", [])
         peripheral = involvement.get("peripheral", [])
-        speaker_order = [a for a in involved if a != "UNESCO"] + \
-                        [a for a in peripheral if a != "UNESCO"] + \
-                        ["UNESCO"]
+        speaker_order = [a for a in involved if a != "UN"] + \
+                        [a for a in peripheral if a != "UN"] + \
+                        ["UN"]
 
         use_live = self._use_live and not force_canned
         round_utterances = []
 
         if use_live:
-            # ── LIVE GROQ PATH ──────────────────────────────────────────────
-            # P2: pre-fetch each agent's last-24h GDELT headlines (cached 60s,
-            # auto-falls back to static seeds if GDELT unreachable) and inject into
-            # their persona prompt. Cheap because cache + parallel HTTP.
+            # ── LIVE PATH: Groq (primary) or trained HF model (fallback) ────
             tasks = {}
             for agent_id in speaker_order:
                 inv_level = "involved" if agent_id in involved else "peripheral"
@@ -581,14 +652,18 @@ class DebateOrchestrator:
                     live_events=live_events,
                     public_sentiment=sentiment,
                 )
-                tasks[agent_id] = asyncio.create_task(self._call_groq(prompt, agent_id))
+                if self._use_groq:
+                    tasks[agent_id] = asyncio.create_task(self._call_groq(prompt, agent_id))
+                else:
+                    tasks[agent_id] = asyncio.create_task(self._call_hf_model(prompt, agent_id))
 
-            # Yield utterances as they complete
+            timeout = GROQ_TIMEOUT + 2 if self._use_groq else 30.0
             for agent_id in speaker_order:
                 try:
-                    raw = await asyncio.wait_for(tasks[agent_id], timeout=GROQ_TIMEOUT + 2)
+                    raw = await asyncio.wait_for(tasks[agent_id], timeout=timeout)
                 except Exception as e:
-                    print(f"⚠️  Groq failed for {agent_id}: {e}. Falling back to canned.")
+                    backend = "Groq" if self._use_groq else "HF model"
+                    print(f"⚠️  {backend} failed for {agent_id}: {e}. Falling back to canned.")
                     canned = self._get_canned(crisis_type, [agent_id])
                     raw = canned[0] if canned else {
                         "text": f"{agent_id} remains silent.",
@@ -602,7 +677,6 @@ class DebateOrchestrator:
                 utterance["_live"] = True
                 round_utterances.append(utterance)
 
-                # Update relationship matrix based on stance
                 for mentioned in raw.get("mentioned_countries", []):
                     self.loader.update_relationship(agent_id, mentioned, raw.get("stance", "neutral"))
 
@@ -787,25 +861,25 @@ class DebateOrchestrator:
     def _build_speaker_order(self, involvement: dict) -> list[str]:
         involved = involvement.get("involved", [])
         peripheral = involvement.get("peripheral", [])
-        return [a for a in involved if a != "UNESCO"] + \
-               [a for a in peripheral if a != "UNESCO"] + \
-               ["UNESCO"]
+        return [a for a in involved if a != "UN"] + \
+               [a for a in peripheral if a != "UN"] + \
+               ["UN"]
 
     def _build_rebuttal_order(self, involvement: dict, prior_utterances: list[dict]) -> list[str]:
         """Rebuttal rounds: agents mentioned by others respond first, then
-        oppose/modify speakers, then remaining, then UNESCO last."""
+        oppose/modify speakers, then remaining, then UN last."""
         mentioned_targets: list[str] = []
         rebuttal_speakers: list[str] = []
         seen: set[str] = set()
 
         for u in reversed(prior_utterances):
             for m in u.get("mentionedCountries", []):
-                if m != "UNESCO" and m not in seen:
+                if m != "UN" and m not in seen:
                     mentioned_targets.append(m)
                     seen.add(m)
 
             sid = u["speakerId"]
-            if sid == "UNESCO" or sid in seen:
+            if sid == "UN" or sid in seen:
                 continue
             if u["stance"] in ("oppose", "modify"):
                 rebuttal_speakers.append(sid)
@@ -813,8 +887,8 @@ class DebateOrchestrator:
 
         priority = mentioned_targets + rebuttal_speakers
         all_agents = self._build_speaker_order(involvement)
-        remaining = [a for a in all_agents if a not in seen and a != "UNESCO"]
-        return priority + remaining + ["UNESCO"]
+        remaining = [a for a in all_agents if a not in seen and a != "UN"]
+        return priority + remaining + ["UN"]
 
     def _get_involvement_level(self, agent_id: str, involvement: dict) -> str:
         if agent_id in involvement.get("involved", []):
@@ -889,11 +963,11 @@ class DebateOrchestrator:
         ]
 
     def _compute_vote_tally(self, utterances: list[dict]) -> dict:
-        """Compute vote tally from utterances (UNESCO excluded from vote)."""
+        """Compute vote tally from utterances (UN excluded from vote)."""
         tally = {"support": 0, "oppose": 0, "modify": 0, "neutral": 0}
         for u in utterances:
-            if u["speakerId"] == "UNESCO":
-                continue  # UNESCO is non-voting
+            if u["speakerId"] == "UN":
+                continue  # UN is non-voting
             stance = u.get("stance", "neutral")
             if stance in tally:
                 tally[stance] += 1
@@ -933,10 +1007,10 @@ class DebateOrchestrator:
         return None
 
 
-# ── UNESCO Mediator Helper ─────────────────────────────────────────────────────
+# ── UN Mediator Helper ─────────────────────────────────────────────────────────
 
-class UNESCOMediator:
-    """Selects relevant authority articles for UNESCO utterances."""
+class UNMediator:
+    """Selects relevant authority articles for UN utterances."""
 
     def __init__(self):
         self.loader = PersonaLoader()
@@ -966,7 +1040,7 @@ if __name__ == "__main__":
         orchestrator = DebateOrchestrator()
         involvement = {
             "involved": ["USA", "IND", "SAU"],
-            "peripheral": ["CHN", "RUS", "UNESCO"],
+            "peripheral": ["CHN", "RUS", "UN"],
             "uninvolved": ["DPRK"],
         }
 

@@ -24,7 +24,7 @@ import torch.nn as nn
 
 # ── Constants ────────────────────────────────────────────────────────────────
 
-AGENTS = ["USA", "CHN", "RUS", "IND", "DPRK", "SAU"]   # UNESCO non-economic
+AGENTS = ["USA", "CHN", "RUS", "IND", "DPRK", "SAU"]   # UN non-economic
 GDP_MAX = 30e12                                         # normalisation cap (~USA + CHN)
 WEIGHTS_PATH = Path(__file__).parent / "scorer_weights.pt"
 

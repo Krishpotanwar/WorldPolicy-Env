@@ -12,7 +12,7 @@ On top of that we keep every pre-existing route from the V6.1 demo:
     GET  /groq-status              (renamed from /health to avoid OpenEnv collision)
     GET  /persona/{agent_id}
     GET  /relationship-matrix
-    GET  /unesco-authority/{crisis_type}
+    GET  /un-authority/{crisis_type}
     GET  /vote-outcome/{round_id}
     GET  /stream/debate            (SSE)
     GET  /stream/country-pnl       (SSE)
@@ -52,7 +52,7 @@ from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Str
 
 from openenv.core.env_server.http_server import create_app
 
-from debate_orchestrator import DebateOrchestrator, UNESCOMediator
+from debate_orchestrator import DebateOrchestrator, UNMediator
 from environment import WorldPolicyEnvironment
 from graders import grade_episode
 from models import WorldPolicyAction, WorldPolicyObservation
@@ -80,7 +80,7 @@ ROOT = Path(__file__).parent.resolve()
 PERSONAS_DIR = ROOT / "personas"
 INDEX_HTML = ROOT / "WorldPolicy V6.1.html"
 
-AGENT_IDS = {"USA", "CHN", "RUS", "IND", "DPRK", "SAU", "UNESCO"}
+AGENT_IDS = {"USA", "CHN", "RUS", "IND", "DPRK", "SAU", "UN"}
 
 # V6: Input validation allowlists
 ALLOWED_CRISIS_TYPES = _ALLOWED_CRISIS
@@ -115,7 +115,7 @@ app.add_middleware(
 
 _loader = PersonaLoader()
 _orchestrator = DebateOrchestrator()
-_mediator = UNESCOMediator()
+_mediator = UNMediator()
 
 # round_id -> {"vote_tally": {...}, "crisis_type": ..., "utterances": [...]}
 _round_cache: dict[str, dict] = {}
@@ -265,7 +265,7 @@ def get_matrix():
     }
 
 
-@app.get("/unesco-authority/{crisis_type}")
+@app.get("/un-authority/{crisis_type}")
 def get_authority(crisis_type: str, limit: int = Query(3, ge=1, le=10)):
     if crisis_type not in ALLOWED_CRISIS_TYPES:
         raise HTTPException(400, f"unknown crisis type '{crisis_type}'; allowed: {sorted(ALLOWED_CRISIS_TYPES)}")
@@ -289,25 +289,25 @@ def get_vote(round_id: str):
 
 # ── Streaming debate ────────────────────────────────────────────────────
 
-_ALL_AGENTS = ["USA", "CHN", "RUS", "IND", "DPRK", "SAU", "UNESCO"]
+_ALL_AGENTS = ["USA", "CHN", "RUS", "IND", "DPRK", "SAU", "UN"]
 
 _DEFAULT_INVOLVEMENT = {
     "involved": ["USA", "CHN", "RUS", "IND", "DPRK", "SAU"],
-    "peripheral": ["UNESCO"],
+    "peripheral": ["UN"],
     "uninvolved": [],
 }
 
 
 def _derive_involvement(crisis_type: str) -> dict:
     """Derive involvement tiers from task config. All sovereign agents speak;
-    primary_agents go first, rest follow, UNESCO always last."""
+    primary_agents go first, rest follow, UN always last."""
     for task_cfg in TASKS.values():
         if task_cfg.get("crisis_type") == crisis_type:
             active = task_cfg["active_agents"]
             primary = task_cfg.get("primary_agents", [])
-            sovereign = [a for a in active if a != "UNESCO"]
+            sovereign = [a for a in active if a != "UN"]
             involved = [a for a in sovereign if a in primary]
-            peripheral = [a for a in sovereign if a not in primary] + ["UNESCO"]
+            peripheral = [a for a in sovereign if a not in primary] + ["UN"]
             uninvolved = [a for a in _ALL_AGENTS if a not in active]
             return {"involved": involved, "peripheral": peripheral, "uninvolved": uninvolved}
     return dict(_DEFAULT_INVOLVEMENT)
@@ -399,7 +399,7 @@ _SCRIPTED_COUNTRY_TICKS = [
     {"at": 8, "countryId": "RUS", "deltas": {"gdp": 0.005, "military": 0.03}},
     {"at": 11, "countryId": "IND", "deltas": {"gdp": 0.02, "welfare": 0.018}},
     {"at": 17, "countryId": "SAU", "deltas": {"gdp": -0.015, "energy": 0.02}},
-    {"at": 20, "countryId": "UNESCO", "deltas": {"heritage": 0.04}},
+    {"at": 20, "countryId": "UN", "deltas": {"heritage": 0.04}},
     {"at": 25, "countryId": "USA", "deltas": {"gdp": -0.01, "influence": -0.02}},
     {"at": 34, "countryId": "IND", "deltas": {"gdp": 0.03, "influence": 0.025}},
     {"at": 45, "countryId": "IND", "deltas": {"welfare": 0.04, "heritage": 0.02}},

@@ -112,11 +112,11 @@ GET  /country-sentiment/{id}    sentiment for one agent
 GET  /groq-status               live_groq + live_data + market_data layer flags
 ```
 
-And every original demo route is preserved (`/persona/{id}`, `/relationship-matrix`, `/unesco-authority/{type}`, `/vote-outcome/{id}`, `/stream/debate|country-pnl|company-pnl` SSE, `/live-debate`, `/`, `/{fname:path}` SPA serve).
+And every original demo route is preserved (`/persona/{id}`, `/relationship-matrix`, `/un-authority/{type}`, `/vote-outcome/{id}`, `/stream/debate|country-pnl|company-pnl` SSE, `/live-debate`, `/`, `/{fname:path}` SPA serve).
 
 ### The Three Graduated Tasks
 
-All tasks include **all 7 agents** (USA, CHN, RUS, IND, DPRK, SAU, UNESCO). `primary_agents` controls speaker priority — primary agents speak first, others follow, UNESCO closes as mediator.
+All tasks include **all 7 agents** (USA, CHN, RUS, IND, DPRK, SAU, UN). `primary_agents` controls speaker priority — primary agents speak first, others follow, UN closes as mediator.
 
 | Task | Difficulty | Crisis | Primary agents | Max steps | Target reward range |
 |---|---|---|---|---|---|
@@ -249,7 +249,7 @@ We intentionally use **7 agents** instead of 20. Depth of persona beats count of
 | 🇮🇳 | **India** | Strategic autonomy, swing vote, south-south solidarity | Warm, deliberative, "Vasudhaiva Kutumbakam" |
 | 🇰🇵 | **DPRK** | Defiant, threat-forward, asymmetric leverage | Short sentences, stark, "imperialist powers" |
 | 🇸🇦 | **Saudi Arabia** | Transactional, oil-leverage, quiet brokerage | Discreet, hedging, energy riders on every deal |
-| 🏛️ | **UNESCO** | Neutral mediator, convention-citing, data-grounded | Institutional, precise, "Under Article 11.4, I invoke..." |
+| 🏛️ | **UN** | Neutral mediator, convention-citing, data-grounded | Institutional, precise, "Under Article 11.4, I invoke..." |
 
 ### Persona Depth
 
@@ -262,16 +262,16 @@ Each agent has:
 - **Live event injection** (P2) — last-24h GDELT headlines for the country are injected into the system prompt before each live debate
 - **Public sentiment injection** (P4) — current tone score injected so persona-sensitive agents (USA, IND, SAU) can modulate rhetoric
 
-### UNESCO Is Special
+### The UN Agent Is Special
 
-UNESCO is **not** a country. It is an institutional mediator with four non-negotiable constraints:
+The UN agent is **not** a country. It is an institutional mediator with four non-negotiable constraints:
 
 1. **Non-voting.** Speaks but never casts a vote.
 2. **Unbiased.** Prompt-engineered to refuse to take sides between nations.
-3. **Authority-scoped.** Every UNESCO utterance **must** cite a real convention article from the 30-article corpus (`data/unesco_authority.json`).
+3. **Authority-scoped.** Every UN utterance **must** cite a real convention article from the 30-article corpus (`data/un_authority.json`). UN messages appear in the debate transcript with gold styling and a "UN MEDIATOR" badge.
 4. **Data-grounded.** References real heritage sites, risk scores, education indicators. Never invents facts.
 
-If UNESCO speaks outside its mandate (military, trade), the UI flags `ADVISORY — NON-BINDING`. Within mandate → `WITHIN MANDATE ✓`.
+If the UN speaks outside its mandate (military, trade), the UI flags `ADVISORY — NON-BINDING`. Within mandate → `WITHIN MANDATE ✓`.
 
 ---
 
@@ -288,7 +288,7 @@ If UNESCO speaks outside its mandate (military, trade), the UI flags `ADVISORY �
 │  Standard:    /reset /step /state /schema /health /ws              │
 │  Plan-added:  /grader /tasks /live-crisis/{type} /market-data      │
 │               /sentiment /country-sentiment/{id} /groq-status      │
-│  Demo-preserved: /persona /relationship-matrix /unesco-authority   │
+│  Demo-preserved: /persona /relationship-matrix /un-authority   │
 │               /vote-outcome /stream/debate /stream/country-pnl     │
 │               /stream/company-pnl /live-debate / /{fname:path}     │
 └─────┬────────────────────────────────────────────┬─────────────────┘
@@ -344,11 +344,11 @@ WorldPolicy-Env/
 │
 │ ── Data ──
 ├── data/
-│   ├── unesco_authority.json    # 30 real convention articles + crisis mapping
+│   ├── un_authority.json        # 30 real convention articles + crisis mapping
 │   └── relationships.json       # 7×7 bilateral matrix + grudge memory
 ├── personas/
 │   ├── USA.md   CHN.md   RUS.md   IND.md
-│   ├── DPRK.md  SAU.md   UNESCO.md
+│   ├── DPRK.md  SAU.md   UN.md
 │
 │ ── Frontend (single-file React via Babel-standalone) ──
 ├── WorldPolicy V6.1.html        # SPA entry point
@@ -356,9 +356,9 @@ WorldPolicy-Env/
 ├── agents.js                    # Single source of truth: agent roster, arc colors, stance map, companies
 ├── globe.jsx                    # 2D canvas globe + activeSpeakerId pulse + debate arcs
 ├── portraits.jsx                # AgentPortraitStrip + sentiment chip (imports from agents.js)
-├── debate.jsx                   # DebateTranscriptPanel + TypewriterText + ThinkingIndicator + VoteBar
+├── debate.jsx                   # DebateTranscriptPanel + TypewriterText + UN gold row + CitationExpander + VoteBar
 ├── debate-sim.jsx               # Multi-round SSE debate controller + market poll + debate history
-├── chamber.jsx                  # Theater-mode layout + UNESCOMediatorCard + RhetoricAlert
+├── chamber.jsx                  # Theater-mode layout + RhetoricAlert (no side mediator card)
 ├── pnl.jsx                      # CountryPnLLedger + CompanyPnLStrip + LIVE/DEMO badge
 ├── panels.jsx                   # Glass panels + EvalSummaryCard (dynamic %) + WorldOutcomeSummaryCard
 ├── sim.jsx                      # V5 simulation engine (cascade events, [DEMO] marked)
@@ -458,7 +458,7 @@ The Dockerfile bakes the trained `scorer_weights.pt` into the image at build tim
 | `GET` | `/{fname:path}` | Whitelisted static (`.css .jsx .js .json .md .png .jpg .svg .ico`) — accepts GET + HEAD |
 | `GET` | `/persona/{agent_id}` | Raw persona markdown |
 | `GET` | `/relationship-matrix` | Full 7×7 matrix + grudge memory |
-| `GET` | `/unesco-authority/{crisis_type}` | Relevant convention articles for a crisis |
+| `GET` | `/un-authority/{crisis_type}` | Relevant convention articles for a crisis |
 | `GET` | `/vote-outcome/{round_id}` | Cached vote tally for a completed round |
 | `GET` | `/stream/debate` | SSE — debate utterances |
 | `GET` | `/stream/country-pnl` | SSE — country P&L deltas |
@@ -490,8 +490,8 @@ The Dockerfile bakes the trained `scorer_weights.pt` into the image at build tim
 Debates run up to **3 rounds** with **all 7 agents** speaking each round (up to 21 utterances per debate). The system adapts dynamically:
 
 **Round structure:**
-- **Round 1** — Speaker order from task `primary_agents` first, then remaining agents, UNESCO closes
-- **Round 2+** — Rebuttal order: agents mentioned by name in prior rounds speak first, then agents who opposed/modified, then remaining, UNESCO closes
+- **Round 1** — Speaker order from task `primary_agents` first, then remaining agents, UN closes
+- **Round 2+** — Rebuttal order: agents mentioned by name in prior rounds speak first, then agents who opposed/modified, then remaining, UN closes
 - **Continue logic** — Debate continues if any agent still opposes or modifies after round 2; stops early if consensus reached
 
 **UX features:**
@@ -519,7 +519,7 @@ A direct, no-sugarcoating breakdown for judges and reviewers:
 | Stock prices | yfinance | AAPL $271.06, BYDDY $12.94, RELIANCE.NS ₹1327.80, Aramco ﷼27.22, S&P 7165, Hang Seng 25978, Nifty 23897 |
 | Public sentiment | GDELT `mode=tonechart` (24h) | Tone in [-10, +10] per country, mapped to 5-tier label |
 | LLM debate utterances | Groq Llama 3.3-70b, 7 agents × 3 rounds | **Only when `GROQ_API_KEY` is set** — up to 21 utterances per debate |
-| UNESCO authority scope | Parsed from `authorityCitation` in SSE payload | Dynamic per-utterance; UI renders convention chips from server data |
+| UN authority scope | Parsed from `authorityCitation` in SSE payload | Dynamic per-utterance; authority citations rendered as expandable inline elements in the debate transcript |
 | Persona context (live events) | GDELT 24h headlines per country, injected into system prompt | Active on the live Groq path |
 | World stability score | PyTorch StabilityScorer (trained weights) | Returns real `[0,1]` from feature vector |
 | Reward | MOGSR grader (deterministic from round_result) | Returns floats in `[-1, 2]`; episode normalized to `[0,1]` |
@@ -545,8 +545,8 @@ A direct, no-sugarcoating breakdown for judges and reviewers:
 | What | Was | Now |
 |---|---|---|
 | Agent roster (IDs, names, tints) | Duplicated across 7 frontend files with conflicts | Single source: `agents.js` (frontend), `AGENTS_CONFIG` (backend) |
-| UNESCO authority scope chips | Hardcoded `['Article 1.2 — Heritage Conservation', ...]` in HTML | Parsed from `unescoUtterance.authorityCitation` SSE payload |
-| `isAuthoritative` badge | Hardcoded `true` in HTML | Driven by `unescoUtterance.isAuthoritative` from backend |
+| UN authority scope chips | Hardcoded `['Article 1.2 — Heritage Conservation', ...]` in HTML | Parsed from `authorityCitation` in SSE payload; rendered as expandable inline citations in transcript |
+| `isAuthoritative` badge | Hardcoded `true` in HTML | Driven by `isUN` flag from backend |
 | Task active agents | task_1 had only 3 agents; task_2 had 5 | All tasks: 7 agents with `primary_agents` ordering |
 | `_derive_involvement` | Capped at `[:3]` involved agents | Uses task `primary_agents` for ordering; no cap |
 | SSE `world_state` | Magic numbers: `step: 40`, `welfare_index: 0.42` | Derived from task `max_steps` and crisis description |
@@ -590,7 +590,7 @@ A direct, no-sugarcoating breakdown for judges and reviewers:
 
 ---
 
-## 🛡️ UNESCO Authority Corpus
+## 🛡️ UN Authority Corpus
 
 The system includes **30 real international law articles** from:
 
@@ -619,7 +619,7 @@ Each article includes: full text, domain tag, authority level (binding/advisory)
 
 ### Crisis → Article Mapping
 
-When a crisis fires, the system auto-selects relevant UNESCO articles:
+When a crisis fires, the system auto-selects relevant convention articles for the UN agent:
 
 | Crisis Type | Articles Invoked |
 |---|---|
@@ -645,7 +645,7 @@ When a crisis fires, the system auto-selects relevant UNESCO articles:
 | **Frontend** | React 18 UMD + Babel standalone — zero build step |
 | **Styling** | Vanilla CSS custom properties — Liquid Glass design system |
 | **Container** | Docker (`python:3.11-slim`), port 7860, non-root UID 1000 |
-| **Data store** | Flat JSON (`relationships.json`, `unesco_authority.json`) — no database |
+| **Data store** | Flat JSON (`relationships.json`, `un_authority.json`) — no database |
 | **Hosting** | HuggingFace Spaces (Docker SDK) |
 
 ---

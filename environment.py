@@ -71,7 +71,7 @@ except Exception as _exc:  # pragma: no cover
         return []
 
 
-AGENT_IDS_NON_UNESCO = ["USA", "CHN", "RUS", "IND", "DPRK", "SAU"]
+AGENT_IDS_NON_UN = ["USA", "CHN", "RUS", "IND", "DPRK", "SAU"]
 DEFAULT_TASK = "task_1"
 
 
@@ -127,18 +127,18 @@ class WorldPolicyEnvironment(Environment):
 
         # Per-country P&L baselines — World Bank (with fallback).
         country_pnl: Dict[str, Dict[str, float]] = {}
-        for aid in AGENT_IDS_NON_UNESCO:
+        for aid in AGENT_IDS_NON_UN:
             country_pnl[aid] = get_wb_baseline(aid)
-        # UNESCO is heritage-only; carries a flat seed.
-        country_pnl["UNESCO"] = {"heritage": 1.0, "influence": 0.5}
+        # UN is heritage-only; carries a flat seed.
+        country_pnl["UN"] = {"heritage": 1.0, "influence": 0.5}
 
         # Relationship matrix snapshot — persistent across sessions, mutated by step()
         rel_matrix = {a: dict(self._loader.get_relationship_row(a)) for a in self._loader._relationships}
         if not rel_matrix:
             # No matrix loaded — seed neutral
             rel_matrix = {
-                a: {b: 0.0 for b in AGENT_IDS_NON_UNESCO + ["UNESCO"] if b != a}
-                for a in AGENT_IDS_NON_UNESCO + ["UNESCO"]
+                a: {b: 0.0 for b in AGENT_IDS_NON_UN + ["UN"] if b != a}
+                for a in AGENT_IDS_NON_UN + ["UN"]
             }
 
         # Initial stability via PyTorch scorer
@@ -353,11 +353,11 @@ class WorldPolicyEnvironment(Environment):
         """
         crisis_type = self._task_state["crisis_type"]
         active_agents = list(self._task_state["task_cfg"]["active_agents"])
-        involved = [a for a in active_agents if a != "UNESCO"][:3]
+        involved = [a for a in active_agents if a != "UN"][:3]
         peripheral = [a for a in active_agents if a not in involved]
-        if "UNESCO" not in involved + peripheral and "UNESCO" in active_agents:
-            peripheral.append("UNESCO")
-        uninvolved = [a for a in (AGENT_IDS_NON_UNESCO + ["UNESCO"]) if a not in active_agents]
+        if "UN" not in involved + peripheral and "UN" in active_agents:
+            peripheral.append("UN")
+        uninvolved = [a for a in (AGENT_IDS_NON_UN + ["UN"]) if a not in active_agents]
 
         # Drive the async orchestrator
         coro = self._collect_utterances(
@@ -394,9 +394,9 @@ class WorldPolicyEnvironment(Environment):
 
         # Constraint violations
         violations: List[str] = []
-        if action.action_type == "sanction" and action.target == "UNESCO":
+        if action.action_type == "sanction" and action.target == "UN":
             violations.append("un_charter_violation")
-        if crisis_type == "arms_race" and action.action_type == "veto" and action.target == "UNESCO":
+        if crisis_type == "arms_race" and action.action_type == "veto" and action.target == "UN":
             violations.append("contradictory_policy")
         # Hard escalation trigger from task_3
         trig = self._task_state["task_cfg"].get("escalation_trigger")
@@ -478,12 +478,12 @@ class WorldPolicyEnvironment(Environment):
         utterances: List[Dict[str, Any]],
         action: WorldPolicyAction,
     ) -> set[str]:
-        """A coalition forms when 2+ non-UNESCO agents support the same proposal."""
+        """A coalition forms when 2+ non-UN agents support the same proposal."""
         if action.action_type != "form_coalition" and action.action_type != "propose_resolution":
             return set()
         supporters: set[str] = set()
         for u in utterances:
-            if u.get("speakerId") == "UNESCO":
+            if u.get("speakerId") == "UN":
                 continue
             if u.get("stance") == "support":
                 supporters.add(u["speakerId"])
@@ -536,7 +536,7 @@ if __name__ == "__main__":
         agent_id="USA",
         action_type="propose_resolution",
         target="IND",
-        description="Coordinate aid dispatch under UNESCO mandate.",
+        description="Coordinate aid dispatch under UN mandate.",
     )
     obs2 = env.step(action)
     print(f"step1: reward={obs2.reward:.3f} done={obs2.done} step_count={obs2.step_count}")

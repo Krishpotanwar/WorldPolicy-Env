@@ -108,7 +108,7 @@ def stage1_risk(obs: Dict[str, Any]) -> Dict[str, Any]:
     nuclear_risk = any(
         rels.get("DPRK", {}).get(a, 0) < -0.5 for a in ("USA", "IND", "SAU")
     )
-    priority_agents = ["DPRK", "RUS"] if nuclear_risk else ["UNESCO", "IND"]
+    priority_agents = ["DPRK", "RUS"] if nuclear_risk else ["UN", "IND"]
     return {
         "stability_score": stability,
         "crisis_severity": severity,
@@ -148,7 +148,7 @@ def stage2_triage(obs: Dict[str, Any], risk: Dict[str, Any], agent_id: str) -> s
 
 def _heuristic_triage(obs: Dict[str, Any], risk: Dict[str, Any], agent_id: str) -> str:
     if risk["nuclear_risk"]:
-        return f"{agent_id}: highest risk is nuclear escalation; prioritize de-escalation and coalition with UNESCO."
+        return f"{agent_id}: highest risk is nuclear escalation; prioritize de-escalation and coalition with the UN."
     if risk["stability_score"] < 0.4:
         return f"{agent_id}: stability is low; prioritize humanitarian relief and binding resolution."
     return f"{agent_id}: situation contained; prioritize coalition formation to lock in gains."
@@ -184,10 +184,10 @@ def stage3_plan(obs: Dict[str, Any], triage: str, agent_id: str) -> str:
 
 def _heuristic_plan(triage: str, agent_id: str, allies: List[str]) -> str:
     if "nuclear" in triage.lower():
-        return "form_coalition with UNESCO to invoke article and de-escalate"
+        return "form_coalition with UN to invoke article and de-escalate"
     if allies:
         return f"form_coalition with {allies[0]} then propose_resolution"
-    return "propose_resolution targeting UNESCO for legitimacy"
+    return "propose_resolution targeting UN for legitimacy"
 
 
 # ── Stage 4: Action (LLM with strict validation + heuristic fallback) ─────────
@@ -238,7 +238,7 @@ def _heuristic_action(plan: str, agent_id: str, obs: Dict[str, Any]) -> Dict[str
                 "target": target, "description": f"{agent_id} proposes coalition with {target} to stabilize."}
     if "invoke_article" in p:
         return {"agent_id": agent_id, "action_type": "invoke_article",
-                "target": "UNESCO", "description": f"{agent_id} invokes UNESCO mandate for legitimacy."}
+                "target": "UN", "description": f"{agent_id} invokes UN mandate for legitimacy."}
     if "sanction" in p:
         return {"agent_id": agent_id, "action_type": "sanction",
                 "target": "DPRK", "description": f"{agent_id} sanctions targeted entity."}
@@ -246,7 +246,7 @@ def _heuristic_action(plan: str, agent_id: str, obs: Dict[str, Any]) -> Dict[str
         return {"agent_id": agent_id, "action_type": "veto",
                 "target": None, "description": f"{agent_id} blocks the current proposal."}
     return {"agent_id": agent_id, "action_type": "propose_resolution",
-            "target": "UNESCO", "description": f"{agent_id} proposes coordinated resolution under UNESCO oversight."}
+            "target": "UN", "description": f"{agent_id} proposes coordinated resolution under UN oversight."}
 
 
 # ── Main loop ────────────────────────────────────────────────────────────────

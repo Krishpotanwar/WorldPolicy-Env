@@ -54,7 +54,7 @@ function CountryPnLLedger({ rows, activeSpeakerId }) {
         React.createElement('tbody', null,
           (rows || []).map(row => {
             const isActive = activeSpeakerId === row.countryId;
-            const isUNESCO = row.countryId === 'UNESCO';
+            const isUN = row.countryId === 'UN';
             return React.createElement('tr', {
               key: row.countryId,
               style: {
@@ -68,7 +68,7 @@ function CountryPnLLedger({ rows, activeSpeakerId }) {
                   padding: '4px 12px', color: row.tint, letterSpacing: '0.5px' }
               }, row.countryId),
               ...PNL_METRICS.map((m, i) => {
-                const val = isUNESCO && m !== 'heritage' ? null : (row.metrics?.[m] || 0);
+                const val = isUN && m !== 'heritage' ? null : (row.metrics?.[m] || 0);
                 const delta = row.deltasSinceLastTick?.[m] || 0;
                 return React.createElement(PnLCell, { key: i, value: val, delta, tint: row.tint });
               }),

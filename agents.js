@@ -9,11 +9,11 @@ const AGENTS = [
   { id: 'IND',    name: 'India',          code: 'IN', tint: '#f59e0b', lat: 28.6,   lon: 77.2 },
   { id: 'DPRK',   name: 'North Korea',    code: 'KP', tint: '#ef4444', lat: 39.0,   lon: 125.8 },
   { id: 'SAU',    name: 'Saudi Arabia',    code: 'SA', tint: '#22c55e', lat: 24.7,   lon: 46.7 },
-  { id: 'UNESCO', name: 'UNESCO',          code: '\u{1F54A}', tint: '#14b8a6', lat: 48.85, lon: 2.35 },
+  { id: 'UN',     name: 'United Nations',   code: 'UN', tint: '#eab308', lat: 48.85, lon: 2.35 },
 ];
 
 const COUNTRIES_MARKERS = AGENTS.map(a => ({
-  id: a.id, name: a.id === 'UNESCO' ? 'UNESCO (Paris)' : a.name,
+  id: a.id, name: a.name,
   lat: a.lat, lon: a.lon, color: a.tint,
 })).concat([
   { id: 'GBR', name: 'United Kingdom', lat: 51.5,  lon: -0.1,  color: '#8b5cf6' },
@@ -41,7 +41,7 @@ const STANCE_MAP = {
   oppose:  { type: 'SANCTION', label: 'OPPOSES',  bg: 'rgba(239,68,68,0.15)', border: 'rgba(239,68,68,0.4)', color: '#ef4444' },
   modify:  { type: 'TRADE',    label: 'MODIFIES', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.4)', color: '#f59e0b' },
   neutral: { type: 'TRADE',    label: 'NEUTRAL',  bg: 'rgba(148,163,184,0.15)', border: 'rgba(148,163,184,0.4)', color: '#94a3b8' },
-  mediate: { type: 'TRADE',    label: 'MEDIATES', bg: 'rgba(20,184,166,0.15)', border: 'rgba(20,184,166,0.4)', color: '#14b8a6' },
+  mediate: { type: 'TRADE',    label: 'MEDIATES', bg: 'rgba(234,179,8,0.15)', border: 'rgba(234,179,8,0.4)', color: '#eab308' },
 };
 
 Object.assign(window, { AGENTS, COUNTRIES_MARKERS, COMPANIES, ARC_COLORS, STANCE_MAP });
