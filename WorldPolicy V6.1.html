@@ -356,9 +356,9 @@ function App() {
         className: 'btn-skeu', onClick: handleLiveDebate,
         disabled: debate.running,
         style: { borderColor: 'rgba(139,92,246,0.5)', color: 'rgba(200,180,255,0.9)' },
-      }, debate.connectionStatus === 'calling' ? '⏳ Calling Groq…'
-        : debate.running && debate.liveMode === 'live' ? '🟢 Groq Streaming…'
-        : '🎭 Live Debate (Groq)'),
+      }, debate.connectionStatus === 'calling' ? '⏳ Starting live debate…'
+        : debate.running && debate.liveMode === 'live' ? '🟢 LLM live…'
+        : '🎭 Live Debate (LLM)'),
       React.createElement('div', { style: { flex: 1 } }),
       // Connection status indicator
       React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 6, marginRight: 8 } },
@@ -370,7 +370,7 @@ function App() {
           : ''
         ) }),
         React.createElement('span', { style: { fontFamily: 'var(--font-mono)', fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: '1px' } },
-          debate.connectionStatus === 'streaming' ? (debate.liveMode === 'live' ? 'LIVE GROQ' : 'CANNED SSE')
+          debate.connectionStatus === 'streaming' ? (debate.liveMode === 'live' ? 'LIVE LLM' : 'CANNED SSE')
           : debate.connectionStatus === 'reconnecting' ? 'RECONNECTING'
           : debate.connectionStatus === 'complete' ? 'DEBATE COMPLETE'
           : debate.connectionStatus === 'error' ? 'ERROR'
