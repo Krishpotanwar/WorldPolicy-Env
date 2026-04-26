@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WorldPolicy-Env V5</title>
+<link rel="stylesheet" href="worldpolicy.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="globe.jsx"></script>
+<script type="text/babel" src="panels.jsx"></script>
+<script type="text/babel" src="sim.jsx"></script>
+
+<script type="text/babel">
+
+const EVAL_DATA = [
+  { name: 'Random', mean: 0.61, std: 0.08, color: '#6b7280' },
+  { name: 'Rule-Based', mean: 1.87, std: 0.12, color: '#f59e0b' },
+  { name: 'MAPPO', mean: 2.34, std: 0.15, color: '#3b82f6' },
+];
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "simSpeed": 300,
+  "glowIntensity": 1,
+  "showArchDefault": false
+}/*EDITMODE-END*/;
+
+function App() {
+  const { state: sim, start, pause, reset } = useSimulation();
+  const [tweaks, setTweaks] = React.useState(TWEAK_DEFAULTS);
+  const [tweaksVisible, setTweaksVisible] = React.useState(false);
+
+  // Tweaks protocol
+  React.useEffect(() => {
+    const handler = (e) => {
+      if (e.data?.type === '__activate_edit_mode') setTweaksVisible(true);
+      if (e.data?.type === '__deactivate_edit_mode') setTweaksVisible(false);
+    };
+    window.addEventListener('message', handler);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  const updateTweak = (key, val) => {
+    const next = { ...tweaks, [key]: val };
+    setTweaks(next);
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [key]: val } }, '*');
+  };
+
+  return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg-deep)' } },
+    // Banner
+    React.createElement(ClaimBoundaryBanner, { mode: sim.step > 0 ? 'trained' : 'scripted', checkpoint: 'mappo_50k.pt' }),
+
+    // Main grid
+    React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 340px', gap: 16, padding: 16, flex: 1, minHeight: 0 } },
+      // Left: Globe
+      React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 12, minHeight: 0 } },
+        React.createElement('div', { style: {
+          flex: 1, borderRadius: 20, border: '1px solid var(--glass-border)',
+          boxShadow: 'var(--shadow-glass)', overflow: 'hidden', position: 'relative',
+          background: '#000000',
+        } },
+          React.createElement(GlobeCanvas, { step: sim.step, arcs: sim.arcs, disasterCountry: sim.disasterCountry, rotation: sim.rotation }),
+          // Vignette
+          React.createElement('div', { style: { position: 'absolute', inset: 0, borderRadius: 20, pointerEvents: 'none',
+            background: 'radial-gradient(ellipse at center, transparent 60%, rgba(5,8,16,0.5) 100%)' } }),
+          // Crisis overlay
+          sim.disasterCountry && React.createElement('div', { style: {
+            position: 'absolute', top: 16, left: 16, display: 'flex', alignItems: 'center', gap: 8,
+            background: 'rgba(239,68,68,0.15)', backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10, padding: '8px 14px',
+          } },
+            React.createElement('div', { className: 'led led-red led-pulse' }),
+            React.createElement('span', { style: { fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600, color: '#f87171' } },
+              'CRISIS ACTIVE — ' + sim.disasterCountry),
+          ),
+          // Arc legend
+          React.createElement('div', { style: {
+            position: 'absolute', bottom: 16, left: 16, display: 'flex', gap: 12,
+            background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)',
+            borderRadius: 8, padding: '6px 12px',
+          } },
+            [['SANCTION', '#ef4444', '- -'], ['AID', '#3b82f6', '—'], ['TRADE', '#22c55e', '—']].map(([label, color, dash]) =>
+              React.createElement('div', { key: label, style: { display: 'flex', alignItems: 'center', gap: 4 } },
+                React.createElement('div', { style: { width: 16, height: 2, background: color,
+                  borderStyle: dash === '- -' ? 'dashed' : 'solid', borderColor: color, borderWidth: dash === '- -' ? '1px 0 0 0' : 0 } }),
+                React.createElement('span', { style: { fontSize: 9, color: 'rgba(255,255,255,0.4)', fontFamily: 'var(--font-mono)' } }, label),
+              )
+            ),
+          ),
+        ),
+        // Architecture
+        React.createElement(ArchitectureDiagramPanel),
+      ),
+
+      // Right: Panel stack
+      React.createElement('div', { className: 'panel-scroll', style: { display: 'flex', flexDirection: 'column', gap: 12,
+        overflowY: 'auto', minHeight: 0 } },
+        React.createElement(CrisisBriefCard, { brief: sim.brief, isLoading: sim.briefLoading }),
+        React.createElement(TrainingFactsCard),
+        React.createElement(EmergentBadgePanel, { coldWar: sim.coldWar, armsRace: sim.armsRace, freeRider: sim.freeRider }),
+        React.createElement(EvalSummaryCard, { data: EVAL_DATA, episodes: 10, checkpoint: 'mappo_50k.pt' }),
+        React.createElement(SimPanel, { step: sim.step, maxSteps: sim.maxSteps, actions: sim.actions, curves: sim.curves }),
+      ),
+    ),
+
+    // Controls bar
+    React.createElement('div', { style: {
+      display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
+      background: 'var(--glass-bg)', backdropFilter: 'var(--glass-blur)',
+      borderTop: '1px solid var(--glass-border)', flexShrink: 0,
+    } },
+      React.createElement('button', { className: 'btn-skeu btn-skeu-primary',
+        onClick: sim.running ? pause : start },
+        sim.running ? '⏸ Pause' : '▶ Run Scripted Demo'),
+      React.createElement('button', { className: 'btn-skeu', onClick: reset }, '↺ Reset'),
+      React.createElement('div', { style: { flex: 1 } }),
+      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } },
+        React.createElement('div', { className: 'led ' + (sim.running ? 'led-green led-pulse' : 'led-amber') }),
+        React.createElement('span', { style: { fontFamily: 'var(--font-mono)', fontSize: 10, color: 'rgba(255,255,255,0.4)' } },
+          sim.running ? 'SIMULATION RUNNING' : (sim.step > 0 ? 'PAUSED' : 'READY')),
+      ),
+    ),
+
+    // Tweaks panel
+    tweaksVisible && React.createElement('div', { style: {
+      position: 'fixed', bottom: 70, right: 16, width: 240,
+      background: 'rgba(10,14,26,0.95)', backdropFilter: 'blur(24px)',
+      border: '1px solid var(--glass-border)', borderRadius: 12,
+      boxShadow: '0 16px 48px rgba(0,0,0,0.6)', padding: 16, zIndex: 100,
+      fontFamily: 'var(--font-ui)',
+    } },
+      React.createElement('div', { style: { fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)',
+        letterSpacing: '1px', marginBottom: 12 } }, 'TWEAKS'),
+      // Speed
+      React.createElement('div', { style: { marginBottom: 12 } },
+        React.createElement('label', { style: { fontSize: 10, color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: 4 } },
+          'Sim Speed: ' + tweaks.simSpeed + 'ms'),
+        React.createElement('input', { type: 'range', min: 50, max: 500, step: 50, value: tweaks.simSpeed,
+          onChange: e => updateTweak('simSpeed', Number(e.target.value)),
+          style: { width: '100%', accentColor: '#3b82f6' } }),
+      ),
+      // Glow
+      React.createElement('div', { style: { marginBottom: 12 } },
+        React.createElement('label', { style: { fontSize: 10, color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: 4 } },
+          'Glow Intensity: ' + tweaks.glowIntensity.toFixed(1)),
+        React.createElement('input', { type: 'range', min: 0, max: 2, step: 0.1, value: tweaks.glowIntensity,
+          onChange: e => updateTweak('glowIntensity', Number(e.target.value)),
+          style: { width: '100%', accentColor: '#3b82f6' } }),
+      ),
+    ),
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+</script>
+</body>
+</html>

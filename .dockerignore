@@ -1,0 +1,31 @@
+__pycache__
+*.pyc
+.git
+.gitignore
+.DS_Store
+debate_audit.jsonl
+debate_audit.jsonl.1
+graphify-out
+graphify-repo
+uploads
+*.zip
+
+# Dev/planning artifacts — not needed in production container
+1_AntigravityLOG.md
+2_claude.md
+2_claude.original.md
+3_antigravityLOG.md
+4_cursorLOG.md
+V6.1-claude-design-prompt.md
+WorldPolicy-V6.1-WIN-Plan.md
+WorldPolicy V5.html
+parallels-main-design-*.md
+.env
+
+# Probe/test venv used during development (do not ship)
+.openenv-probe/
+
+# Scorer weights are regenerated fresh inside the image by Dockerfile's
+# `RUN python pytorch_scorer.py` step. Excluding the local copy keeps the build
+# reproducible and prevents stale weights from shipping accidentally.
+scorer_weights.pt

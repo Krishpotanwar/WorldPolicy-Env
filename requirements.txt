@@ -1,0 +1,34 @@
+# OpenEnv compliance is the lead requirement. It pulls fastmcp, gradio, websockets,
+# huggingface_hub etc. transitively and constrains fastapi/pydantic/openai/httpx
+# floors that exceeded our previous tight pins (which broke HF build with
+# ResolutionImpossible). Pinning openenv-core in a 0.2.x range and letting pip
+# resolve the rest matches what was verified locally in .openenv-probe.
+openenv-core>=0.2.2,<0.3
+
+# FastAPI / web stack. openenv-core requires fastapi>=0.104, uvicorn>=0.24,
+# pydantic>=2.0; the lower bounds below match the versions we tested with.
+fastapi>=0.115
+uvicorn[standard]>=0.32
+pydantic>=2.9
+
+# HTTP / async — openenv-core requires httpx>=0.28.1 transitively.
+httpx>=0.28.1
+requests>=2.31
+
+# Local env-file loading (.env) for HF_TOKEN/API_BASE_URL etc.
+python-dotenv>=1.0.1
+
+# LLM clients — openenv-core requires openai>=2.7.2 transitively.
+# groq still drives the live debate path (DebateOrchestrator); 0.24+ has the
+# httpx-proxies fix from a previous audit; 1.x works against the same API.
+openai>=2.7.2
+groq>=0.24
+
+# PyTorch — required for the StabilityScorer (hackathon mandates a non-trivial
+# PyTorch model). CPU-only wheel, weights pre-trained at Docker build time.
+torch>=2.4.0
+
+# yfinance — P3 live market data layer (CompanyPnLStrip + country indices).
+# Soft dependency in market_data.py: server boots fine without it; ticker strip
+# falls through to the static seed when yfinance is missing or unreachable.
+yfinance>=0.2.40

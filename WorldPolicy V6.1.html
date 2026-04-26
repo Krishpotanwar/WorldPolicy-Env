@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WorldPolicy-Env V6.1 — Debate Chamber</title>
+<link rel="stylesheet" href="worldpolicy.css">
+<style>
+  @keyframes portrait-pulse {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 0.9; transform: scale(1.04); }
+  }
+  @keyframes ticker-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @keyframes blink-cursor {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+  @keyframes thinking-dot {
+    0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+    40% { opacity: 1; transform: scale(1.2); }
+  }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+  // WP_API_BASE: empty = same-origin (HF Spaces single container).
+  // Override via localStorage.setItem('wp:apiBase', 'http://127.0.0.1:8000') for local dev.
+  (function() {
+    try {
+      var stored = localStorage.getItem('wp:apiBase');
+      window.WP_API_BASE = stored !== null ? stored : '';
+    } catch (e) { window.WP_API_BASE = ''; }
+  })();
+</script>
+
+<script src="agents.js"></script>
+<script type="text/babel" src="globe.jsx"></script>
+<script type="text/babel" src="panels.jsx"></script>
+<script type="text/babel" src="sim.jsx"></script>
+<script type="text/babel" src="portraits.jsx"></script>
+<script type="text/babel" src="debate.jsx"></script>
+<script type="text/babel" src="pnl.jsx"></script>
+<script type="text/babel" src="chamber.jsx"></script>
+<script type="text/babel" src="casestudies.jsx"></script>
+<script type="text/babel" src="debate-sim.jsx"></script>
+
+<script type="text/babel">
+
+/* [DEMO] Evaluation data — replace with /eval-summary endpoint when backend eval pipeline is live */
+const EVAL_DATA = [
+  { name: 'Random', mean: 0.61, std: 0.08, color: '#6b7280' },
+  { name: 'Rule-Based', mean: 1.87, std: 0.12, color: '#f59e0b' },
+  { name: 'MAPPO', mean: 2.34, std: 0.15, color: '#3b82f6' },
+];
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "simSpeed": 250,
+  "debateSpeed": 800,
+  "glowIntensity": 1
+}/*EDITMODE-END*/;
+
+function App() {
+  // Layout mode
+  const [mode, setMode] = React.useState(() => {
+    try { return localStorage.getItem('wp:layoutMode') || 'split'; } catch(e) { return 'split'; }
+  });
+  React.useEffect(() => { try { localStorage.setItem('wp:layoutMode', mode); } catch(e) {} }, [mode]);
+
+  // V5 sim
+  const { state: sim, start: simStart, pause: simPause, reset: simReset } = useSimulation();
+  // V6.1 debate — SSE-driven
+  const { state: debate, startLive, startCanned, pause: debatePause, reset: debateReset, loadHistory: debateLoadHistory } = useDebateStream();
+  // P&L SSE streams — run in parallel with debate
+  const countryPnl = useCountryPnLStream();
+  const companyPnl = useCompanyPnLStream();
+
+  // Focus state
+  const [focusedId, setFocusedId] = React.useState(null);
+  const [hoveredId, setHoveredId] = React.useState(null);
+
+  // Rhetoric alert dismiss
+  const [alertDismissed, setAlertDismissed] = React.useState(false);
+
+  // (outcome now rendered inline inside DebateTranscriptPanel)
+
+  // Cascade auto-trigger: start debate when sim signals crisis or cold war bifurcation
+  const cascadeTriggered = React.useRef(false);
+  React.useEffect(() => {
+    const cascaded = Boolean(sim.disasterCountry) || Boolean(sim.coldWar?.detected);
+    if (cascaded && !cascadeTriggered.current && !debate.running && debate.step === 0) {
+      cascadeTriggered.current = true;
+      startCanned();
+    }
+    if (!sim.disasterCountry && !sim.coldWar?.detected && debate.step === 0) {
+      cascadeTriggered.current = false;
+    }
+  }, [sim.disasterCountry, sim.coldWar?.detected, debate.running, debate.step]);
+
+  // Live-debate button handler: SSE-driven, no local script fallback
+  const handleLiveDebate = React.useCallback(async () => {
+    debateReset(); countryPnl.reset(); companyPnl.reset();
+    countryPnl.start(); companyPnl.start();
+    await startLive();
+  }, [startLive, debateReset]);
+
+  // Canned debate button handler: always server-driven SSE
+  const handleCannedDebate = React.useCallback(() => {
+    debateReset(); countryPnl.reset(); companyPnl.reset();
+    countryPnl.start(); companyPnl.start();
+    startCanned();
+  }, [startCanned, debateReset]);
+
+  // Keyboard shortcuts
+  React.useEffect(() => {
+    const handler = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key === 'g' || e.key === 'G') setMode('globe');
+      if (e.key === 's' || e.key === 'S') setMode('split');
+      if (e.key === 't' || e.key === 'T') setMode('chamber');
+      if (e.key === 'c' || e.key === 'C') setMode('case_studies');
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  // Tweaks
+  const [tweaksVisible, setTweaksVisible] = React.useState(false);
+  React.useEffect(() => {
+    const handler = (e) => {
+      if (e.data?.type === '__activate_edit_mode') setTweaksVisible(true);
+      if (e.data?.type === '__deactivate_edit_mode') setTweaksVisible(false);
+    };
+    window.addEventListener('message', handler);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  const handlePortraitClick = (id) => {
+    setFocusedId(prev => prev === id ? null : id);
+  };
+
+  // Build tooltips from debate state
+  const tooltips = {};
+  AGENTS.forEach(a => {
+    const lastU = [...debate.utterances].reverse().find(u => u.speakerId === a.id);
+    tooltips[a.id] = lastU ? { stance: STANCE_STYLES[lastU.stance]?.label || '', lastStep: lastU.step } : null;
+  });
+
+  // Combined run
+  const runAll = () => { simStart(); startCanned(); countryPnl.start(); companyPnl.start(); };
+  const pauseAll = () => { simPause(); debatePause(); };
+  const resetAll = () => {
+    simReset(); debateReset(); countryPnl.reset(); companyPnl.reset();
+    setFocusedId(null); setAlertDismissed(false); setOutcomeDismissed(false);
+    cascadeTriggered.current = false;
+  };
+
+  const isRunning = sim.running || debate.running;
+
+  return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--bg-deep)' } },
+    // Banner
+    React.createElement(ClaimBoundaryBanner, { mode: 'trained', checkpoint: 'mappo_50k.pt' }),
+
+    // Sub-header: mode toggle + scenario
+    React.createElement('div', {
+      style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '8px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }
+    },
+      React.createElement(LayoutModeToggle, { mode, onChange: setMode }),
+      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } },
+        React.createElement('span', { style: { fontFamily: 'var(--font-mono)', fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: '1px' } }, 'SCENARIO:'),
+        React.createElement('span', { style: { fontFamily: 'var(--font-mono)', fontSize: 10, color: 'rgba(255,255,255,0.6)' } },
+          (debate.crisisType || sim.brief?.crisis_type || 'natural_disaster').replace(/_/g, ' ').toUpperCase()
+        ),
+      ),
+      React.createElement('div', { style: { fontFamily: 'var(--font-mono)', fontSize: 9, color: 'rgba(255,255,255,0.2)' } },
+        'Keys: G=Globe  S=Split  T=Theater  C=Cases'),
+    ),
+
+    // Agent portraits (split + chamber + cases modes)
+    mode !== 'globe' && React.createElement(AgentPortraitStrip, {
+      activeSpeakerId: debate.activeSpeakerId,
+      focusedId,
+      involvement: debate.involvement,
+      tooltips,
+      sentimentByAgent: debate.sentimentByAgent,   // P4: tone-colored chip per portrait
+      onHover: setHoveredId,
+      onClick: handlePortraitClick,
+    }),
+
+    // Main content area
+    React.createElement('div', { style: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' } },
+
+      // GLOBE MODE
+      mode === 'globe' && React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 340px', gap: 16, padding: 16, flex: 1, minHeight: 0 } },
+        React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 12, minHeight: 0 } },
+          React.createElement('div', { style: {
+            flex: 1, borderRadius: 20, border: '1px solid var(--glass-border)',
+            boxShadow: 'var(--shadow-glass)', overflow: 'hidden', position: 'relative', background: '#000',
+          } },
+            React.createElement(GlobeCanvas, {
+              step: sim.step, arcs: sim.arcs, disasterCountry: sim.disasterCountry,
+              activeSpeakerId: debate.activeSpeakerId,
+              debateArcs: debate.debateArcs,
+              crisisCountry: debate.crisisCountry,
+            }),
+            sim.disasterCountry && React.createElement('div', { style: {
+              position: 'absolute', top: 16, left: 16, display: 'flex', alignItems: 'center', gap: 8,
+              background: 'rgba(239,68,68,0.15)', backdropFilter: 'blur(12px)',
+              border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10, padding: '8px 14px',
+            } },
+              React.createElement('div', { className: 'led led-red led-pulse' }),
+              React.createElement('span', { style: { fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600, color: '#f87171' } },
+                'CRISIS ACTIVE — ' + sim.disasterCountry),
+            ),
+          ),
+          React.createElement(ArchitectureDiagramPanel),
+        ),
+        React.createElement('div', { className: 'panel-scroll', style: { display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto', minHeight: 0 } },
+          React.createElement(CrisisBriefCard, { brief: sim.brief, isLoading: sim.briefLoading }),
+          React.createElement(TrainingFactsCard),
+          React.createElement(EmergentBadgePanel, { coldWar: sim.coldWar, armsRace: sim.armsRace, freeRider: sim.freeRider }),
+          React.createElement(EvalSummaryCard, { data: EVAL_DATA, episodes: 10, checkpoint: 'mappo_50k.pt' }),
+          React.createElement(SimPanel, { step: sim.step, maxSteps: sim.maxSteps, actions: sim.actions, curves: sim.curves }),
+        ),
+      ),
+
+      // SPLIT MODE
+      mode === 'split' && React.createElement('div', { style: { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' } },
+        React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '55% 1fr', gap: 0, flex: 1, minHeight: 0 } },
+          // Globe
+          React.createElement('div', { style: { display: 'flex', flexDirection: 'column', minHeight: 0, padding: '8px 0 8px 12px' } },
+            React.createElement('div', { style: {
+              flex: 1, borderRadius: 16, border: '1px solid var(--glass-border)',
+              boxShadow: 'var(--shadow-glass)', overflow: 'hidden', position: 'relative', background: '#000',
+            } },
+              React.createElement(GlobeCanvas, {
+                step: sim.step, arcs: sim.arcs, disasterCountry: sim.disasterCountry,
+                activeSpeakerId: debate.activeSpeakerId,
+                debateArcs: debate.debateArcs,
+                crisisCountry: debate.crisisCountry,
+              }),
+              sim.disasterCountry && React.createElement('div', { style: {
+                position: 'absolute', top: 12, left: 12, display: 'flex', alignItems: 'center', gap: 6,
+                background: 'rgba(239,68,68,0.15)', backdropFilter: 'blur(12px)',
+                border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '6px 10px',
+              } },
+                React.createElement('div', { className: 'led led-red led-pulse' }),
+                React.createElement('span', { style: { fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, color: '#f87171' } },
+                  'CRISIS — ' + sim.disasterCountry),
+              ),
+              // Arc legend
+              React.createElement('div', { style: {
+                position: 'absolute', bottom: 12, left: 12, display: 'flex', gap: 10,
+                background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(12px)', borderRadius: 6, padding: '4px 10px',
+              } },
+                [['SANCTION',ARC_COLORS.SANCTION],['AID',ARC_COLORS.AID],['TRADE',ARC_COLORS['TRADE']]].map(([l,c]) =>
+                  React.createElement('div', { key: l, style: { display: 'flex', alignItems: 'center', gap: 4 } },
+                    React.createElement('div', { style: { width: 12, height: 2, background: c, borderRadius: 1 } }),
+                    React.createElement('span', { style: { fontSize: 8, color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--font-mono)' } }, l),
+                  )
+                ),
+              ),
+            ),
+          ),
+          // Right column: P1 scroll fix — chain `flex:1; minHeight:0; overflow:hidden`
+          // up so only the leaf .panel-scroll inside DebateTranscriptPanel scrolls.
+          // The previous wrapper had `overflowY:auto` which prevented inner overflow
+          // (autoScroll in debate.jsx never fired). Now the transcript panel takes the
+          // remaining flex space and scrolls itself; ledger keeps flexShrink:0.
+          React.createElement('div', {
+            style: {
+              display: 'flex', flexDirection: 'column', flex: 1,
+              minHeight: 0, height: '100%', overflow: 'hidden',
+              padding: 8, gap: 8,
+            }
+          },
+            // DebateTranscriptPanel — flex:1 + minHeight:0 lets the inner panel-scroll
+            // div absorb overflow. The component already has its own scrollRef wired.
+            React.createElement('div', { style: { flex: '1 1 0', minHeight: 0, display: 'flex' } },
+              React.createElement(DebateTranscriptPanel, {
+                utterances: debate.utterances,
+                activeSpeakerId: debate.activeSpeakerId,
+                focusedId,
+                voteTally: debate.voteTally,
+                onClearFocus: () => setFocusedId(null),
+                roundDividers: debate.roundDividers,
+                currentRound: debate.currentRound,
+                totalRounds: debate.totalRounds,
+                connectionStatus: debate.connectionStatus,
+                connectionError: debate.connectionError,
+                debateStep: debate.step,
+                debateHistory: debate.debateHistory,
+                onLoadHistory: debateLoadHistory,
+              }),
+            ),
+            // Country P&L ledger — fixed natural height, no shrink
+            React.createElement('div', { style: { flexShrink: 0 } },
+              React.createElement(CountryPnLLedger, {
+                rows: countryPnl.status === 'streaming' || countryPnl.status === 'complete' ? countryPnl.rows : debate.pnlRows,
+                activeSpeakerId: debate.activeSpeakerId,
+              }),
+            ),
+          ),
+        ),
+        // Company ticker — slim 40px strip (P3: marketLive flips to true once
+        // /market-data returns at least one yf-live ticker, lighting the LED badge.)
+        React.createElement(CompanyPnLStrip, {
+          ticks: companyPnl.status === 'streaming' || companyPnl.status === 'complete' ? companyPnl.ticks : debate.companyTicks,
+          activeSpeakerId: debate.activeSpeakerId,
+          marketLive: debate.marketLive || companyPnl.status === 'streaming',
+        }),
+      ),
+
+      // CHAMBER MODE
+      mode === 'chamber' && React.createElement(ChamberView, {
+        activeSpeakerId: debate.activeSpeakerId,
+        utterances: debate.utterances,
+        focusedId,
+        voteTally: debate.voteTally,
+        onFocus: handlePortraitClick,
+        onClearFocus: () => setFocusedId(null),
+        roundDividers: debate.roundDividers,
+        currentRound: debate.currentRound,
+        totalRounds: debate.totalRounds,
+        connectionStatus: debate.connectionStatus,
+        connectionError: debate.connectionError,
+        debateStep: debate.step,
+        debateHistory: debate.debateHistory,
+        onLoadHistory: debateLoadHistory,
+      }),
+      
+      // CASE STUDIES MODE
+      mode === 'case_studies' && React.createElement(CaseStudiesView, {
+        activeSpeakerId: debate.activeSpeakerId,
+        utterances: debate.utterances,
+        focusedId,
+        voteTally: debate.voteTally,
+        onFocus: handlePortraitClick,
+        onClearFocus: () => setFocusedId(null),
+        roundDividers: debate.roundDividers,
+        currentRound: debate.currentRound,
+        totalRounds: debate.totalRounds,
+        connectionStatus: debate.connectionStatus,
+        connectionError: debate.connectionError,
+        debateStep: debate.step,
+        debateHistory: debate.debateHistory,
+        onLoadHistory: debateLoadHistory,
+        onStartLive: startLive,
+        isRunning: debate.running,
+      }),
+    ),
+
+    // Controls bar
+    React.createElement('div', { style: {
+      display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px',
+      background: 'var(--glass-bg)', backdropFilter: 'var(--glass-blur)',
+      borderTop: '1px solid var(--glass-border)', flexShrink: 0,
+    } },
+      React.createElement('button', { className: 'btn-skeu btn-skeu-primary', onClick: isRunning ? pauseAll : runAll },
+        isRunning ? '⏸ Pause' : '▶ Run Demo'),
+      React.createElement('button', { className: 'btn-skeu', onClick: resetAll }, '↺ Reset'),
+      React.createElement('div', { style: { width: 1, height: 24, background: 'rgba(255,255,255,0.1)', margin: '0 4px' } }),
+      React.createElement('button', {
+        className: 'btn-skeu', onClick: handleCannedDebate,
+        disabled: debate.running,
+        style: { borderColor: 'rgba(20,184,166,0.4)' },
+      }, '💬 Trigger Debate'),
+      React.createElement('button', {
+        className: 'btn-skeu', onClick: handleLiveDebate,
+        disabled: debate.running,
+        style: { borderColor: 'rgba(139,92,246,0.5)', color: 'rgba(200,180,255,0.9)' },
+      }, debate.connectionStatus === 'calling' ? '⏳ Starting live debate…'
+        : debate.running && debate.liveMode === 'live' ? '🟢 MAPPO live…'
+        : '🎭 Live Debate (MAPPO)'),
+      React.createElement('div', { style: { flex: 1 } }),
+      // Connection status indicator
+      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 6, marginRight: 8 } },
+        React.createElement('div', { className: 'led ' + (
+          debate.connectionStatus === 'streaming' || debate.connectionStatus === 'connected' ? 'led-green led-pulse'
+          : debate.connectionStatus === 'reconnecting' ? 'led-amber led-pulse'
+          : debate.connectionStatus === 'disconnected' || debate.connectionStatus === 'error' ? 'led-red'
+          : debate.connectionStatus === 'complete' ? 'led-blue'
+          : ''
+        ) }),
+        React.createElement('span', { style: { fontFamily: 'var(--font-mono)', fontSize: 9, color: 'rgba(255,255,255,0.4)', letterSpacing: '1px' } },
+          debate.connectionStatus === 'streaming' ? (debate.liveMode === 'live' ? 'LIVE MAPPO' : 'CANNED SSE')
+          : debate.connectionStatus === 'reconnecting' ? 'RECONNECTING'
+          : debate.connectionStatus === 'complete' ? 'DEBATE COMPLETE'
+          : debate.connectionStatus === 'error' ? 'ERROR'
+          : debate.connectionStatus === 'idle' ? 'READY'
+          : debate.connectionStatus.toUpperCase()
+        ),
+      ),
+      // Round counter
+      debate.currentRound > 0 && React.createElement('div', {
+        style: { fontFamily: 'var(--font-mono)', fontSize: 9, color: 'rgba(255,255,255,0.35)', marginRight: 8 }
+      }, 'ROUND ' + debate.currentRound + (debate.totalRounds ? '/' + debate.totalRounds : '')),
+      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } },
+        React.createElement('div', { className: 'led ' + (isRunning ? 'led-green led-pulse' : debate.step > 0 ? 'led-amber' : '') }),
+        React.createElement('span', { style: { fontFamily: 'var(--font-mono)', fontSize: 10, color: 'rgba(255,255,255,0.4)' } },
+          isRunning ? 'SIM STEP ' + sim.step + ' · DEBATE STEP ' + debate.step : (debate.step > 0 ? 'PAUSED' : 'READY')),
+      ),
+      // Connection error tooltip
+      debate.connectionError && React.createElement('div', {
+        style: { fontFamily: 'var(--font-mono)', fontSize: 9, color: '#ef4444', marginLeft: 8, maxWidth: 200,
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+        title: debate.connectionError,
+      }, debate.connectionError),
+    ),
+
+    // Rhetoric Cold War Alert
+    debate.rhetoricAlert && !alertDismissed && React.createElement(RhetoricColdWarAlert, {
+      alert: debate.rhetoricAlert,
+      onDismiss: () => setAlertDismissed(true),
+    }),
+
+    // Outcome now rendered inline inside DebateTranscriptPanel via DebateOutcomeBanner
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+</script>
+</body>
+</html>
