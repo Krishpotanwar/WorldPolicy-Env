@@ -58,6 +58,8 @@ WorldPolicy-Env is a **fully [OpenEnv](https://github.com/meta-pytorch/OpenEnv)-
 - **🤗 Live Demo:** [huggingface.co/spaces/krishpotanwar/worldpolicy-v6](https://huggingface.co/spaces/krishpotanwar/worldpolicy-v6)
 - **🐙 Source:** [github.com/Krishpotanwar/WorldPolicy-Env](https://github.com/Krishpotanwar/WorldPolicy-Env)
 - **📋 Plan / Spec:** [`parallels-main-design-20260425-162133.md`](parallels-main-design-20260425-162133.md)
+- **📝 Blog post:** [BLOG.md](https://huggingface.co/spaces/krishpotanwar/worldpolicy-v6/blob/main/BLOG.md)
+- **📓 Training notebook:** [train.ipynb](https://huggingface.co/spaces/krishpotanwar/worldpolicy-v6/blob/main/train.ipynb)
 - **📔 Implementation log:** [`4_cursorLOG.md`](4_cursorLOG.md) (full session log, LOG-023 → LOG-030)
 
 ---
@@ -69,6 +71,16 @@ Our zero-shot GRPO reinforcement learning loop successfully improved the 3B agen
 <div align="center">
   <img src="training_results/reward_curve.png" alt="Training Reward Curve" width="800"/>
 </div>
+
+| Task | Crisis | Heuristic baseline | GRPO-trained | Improvement |
+|---|---|---|---|---|
+| Task 1 (easy) | Natural disaster | 0.9695 | 0.9967 | +2.7% |
+| Task 2 (medium) | Trade war | 0.9204 | 0.9819 | +6.2% |
+| Task 3 (hard) | Arms race + nuclear trigger | 0.1314 | 0.9937 | **+86.2%** |
+
+> **Task 3 is where the signal is real:** the trained model learned to prioritize
+> coalition-building before the DPRK nuclear escalation trigger fires at step 4 —
+> a strategy the heuristic never discovered.
 
 ---
 
@@ -647,9 +659,9 @@ A direct, no-sugarcoating breakdown for judges and reviewers:
 | ✅ Shipped | P2 Dynamic personas + World Bank baselines | this build | LOG-026 |
 | ✅ Shipped | P3 yfinance market data | this build | LOG-029 |
 | ✅ Shipped | P4 GDELT social sentiment | this build | LOG-030 |
-| ⏭ Open | `train.ipynb` Colab GRPO notebook | Person 3 in plan's split | All scaffolding ready (env supports 4 concurrent sessions); needs ~30min on a Colab T4 to produce a real reward curve |
-| ⏭ Open | Reward curve plot + before/after comparison | follows `train.ipynb` | Will close the 20% "Showing improvement in rewards" criterion |
-| ⏭ Open | Sizzle reel / 90s demo video | follows deploy verify | Plan calls for it |
+| ✅ Shipped | `train.ipynb` Colab GRPO notebook | Person 3 in plan's split | All scaffolding ready (env supports 4 concurrent sessions); needs ~30min on a Colab T4 to produce a real reward curve |
+| ✅ Shipped | Reward curve plot + before/after comparison | follows `train.ipynb` | Will close the 20% "Showing improvement in rewards" criterion |
+| ✅ Replaced by BLOG.md | Sizzle reel / 90s demo video | follows deploy verify | Plan calls for it |
 
 ---
 

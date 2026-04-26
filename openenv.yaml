@@ -1,6 +1,19 @@
 spec_version: 1
 name: worldpolicy_env
+description: >
+  OpenEnv-compliant multi-agent geopolitical RL environment. Seven AI agents
+  debate live crises pulled from GDELT, with World Bank GDP baselines, yfinance
+  market data, and GDELT public sentiment. MOGSR 4-layer reward with
+  crisis-adaptive weights and nuclear-escalation hard penalty.
 type: space
 runtime: fastapi
 app: server:app
 port: 7860
+tags:
+  - reinforcement-learning
+  - multi-agent
+  - geopolitics
+  - llm
+  - grpo
+authors:
+  - krishpotanwar
