@@ -1,7 +1,7 @@
 # 🪐 4_cursorLOG — WorldPolicy-Env V6.1 → OpenEnv-Compliant Live RL Env
 
-> **Continuation of:** `1_AntigravityLOG.md` → `2_claude.md` → `3_antigravityLOG.md`
-> **Session model:** Cursor (Claude Opus 4.7)
+> **Continuation of:** `1_AntigravityLOG.md` → `2_session_log.md` → `3_antigravityLOG.md`
+> **Session model:** Cursor
 > **Session started:** 2026-04-25 16:21 IST
 > **Plan source:** `parallels-main-design-20260425-162133.md` (APPROVED, reviewer round 3)
 > **Objective:** Execute the Full Upgrade plan — turn the V6.1 demo into an OpenEnv-compliant
@@ -117,8 +117,8 @@ its generated `models.py`, `client.py`, `server/app.py`,
 
 **Files read (existing project):** `server.py`, `debate_orchestrator.py`,
 `persona_loader.py`, `requirements.txt`, `Dockerfile`, `globe.jsx`,
-`1_AntigravityLOG.md`, `2_claude.md`, `3_antigravityLOG.md`,
-`parallels-main-design-20260425-162133.md`, `CLAUDE.md` (root), `AGENTS.md` (root).
+`1_AntigravityLOG.md`, `2_session_log.md`, `3_antigravityLOG.md`,
+`parallels-main-design-20260425-162133.md`, `AGENTS.md` (root).
 
 **Files inspected (SDK source via probe venv):** `openenv/__init__.py`,
 `openenv/core/__init__.py`, `openenv.core.env_server.interfaces.Environment`,

@@ -2,7 +2,7 @@
 
 > **Hackathon:** Scaler × PyTorch × HuggingFace × Meta — Bengaluru, April 25–26 2026
 > **Team:** Krish · Raj · Tushar
-> **AI Pair:** Antigravity (Claude Sonnet 4.6 Thinking)
+> **AI Pair:** Antigravity
 > **Session Started:** 2026-04-25 03:36 IST
 > **Log Format:** Every work block is logged here — what was checked, what was built, what comes next.
 
@@ -151,7 +151,7 @@ These are the **backend features** from the plan that do NOT exist yet. Everythi
 
 ### [LOG-001] — 2026-04-25 03:36 IST
 **Action:** Read all project files, analyzed V6.1 plan, created this log.
-**Files Read:** `WorldPolicy-V6.1-WIN-Plan.md`, `WorldPolicy V6.1.html`, `worldpolicy.css`, `portraits.jsx`, `debate.jsx`, `pnl.jsx`, `chamber.jsx`, `debate-sim.jsx`, `sim.jsx`, `panels.jsx`, `globe.jsx`, `V6.1-claude-design-prompt.md`
+**Files Read:** `WorldPolicy-V6.1-WIN-Plan.md`, `WorldPolicy V6.1.html`, `worldpolicy.css`, `portraits.jsx`, `debate.jsx`, `pnl.jsx`, `chamber.jsx`, `debate-sim.jsx`, `sim.jsx`, `panels.jsx`, `globe.jsx`, `V6.1-frontend-design-prompt.md`
 **Finding:** Frontend is ~85% complete and looks impressive. Backend is 0% built. The demo will run fully from scripted data.
 **Next:** Begin implementing missing pieces. Priority order below.
 

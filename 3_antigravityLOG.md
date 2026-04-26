@@ -1,7 +1,7 @@
 # 🪐 3_antigravityLOG — WorldPolicy-Env V6.1 Codebase Audit & Restructure
 
-> **Continuation of:** `1_AntigravityLOG.md` (Antigravity) → `2_claude.md` (Claude)
-> **Session model:** Antigravity (Claude Opus 4.6 Thinking)
+> **Continuation of:** `1_AntigravityLOG.md` (Antigravity) → `2_session_log.md` (session 2)
+> **Session model:** Antigravity
 > **Session started:** 2026-04-25 12:18 IST
 > **Objective:** Full codebase audit, vulnerability scan, structural fixes, code quality hardening.
 
@@ -71,7 +71,7 @@ $ python3 -c "import server"    → ✓ imports clean (groq not installed = expe
 | V15 | **`.DS_Store` in repo** | root | — | macOS artifact committed. | Delete, already in .gitignore. |
 | V16 | **Dockerfile non-root user** | `Dockerfile` | — | Runs as root inside container. HF Spaces expects this but best practice is non-root. | Add `USER 1000` for safety. |
 | V17 | **`WorldPolicy V5.html` orphan** | root | — | Old V5 HTML still present. Dead code. | Delete or move to archive. |
-| V18 | **`V6.1-claude-design-prompt.md` in deploy** | `.dockerignore` | — | 25KB design prompt not excluded from Docker image. | Add to `.dockerignore`. |
+| V18 | **`V6.1-frontend-design-prompt.md` in deploy** | `.dockerignore` | — | 25KB design prompt not excluded from Docker image. | Add to `.dockerignore`. |
 
 ---
 
@@ -145,10 +145,10 @@ Proj/
 ├── .gitignore                   # Standard Python + project excludes
 │
 ├── WorldPolicy V5.html          # Legacy reference (not deployed)
-├── V6.1-claude-design-prompt.md # Design prompt reference (not deployed)
+├── V6.1-frontend-design-prompt.md # Design prompt reference (not deployed)
 ├── WorldPolicy-V6.1-WIN-Plan.md # Master plan (not deployed)
 ├── 1_AntigravityLOG.md          # Session 1 log (not deployed)
-├── 2_claude.md                  # Session 2 log (not deployed)
+├── 2_session_log.md             # Session 2 log (not deployed)
 └── 3_antigravityLOG.md          # This file (not deployed)
 ```
 

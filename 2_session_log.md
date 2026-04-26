@@ -1,7 +1,7 @@
-# 🪐 2_claude — WorldPolicy-Env V6.1 Claude Code Session Log
+# 🪐 2_session_log — WorldPolicy-Env V6.1 dev session log (session 2)
 
 > **Continuation of:** `1_AntigravityLOG.md` (Antigravity end LOG-003 / 2026-04-25 07:52 IST)
-> **Session model:** Claude Opus 4.7 xhigh
+> **Session model:** (see IDE / assistant in use at time of log)
 > **Session started:** 2026-04-25 — resume impl queue from P2-C onward
 > **Log style:** Caveman on. Every work block log here.
 
@@ -115,19 +115,19 @@
 | P1-B | 7 personas | ✅ (Antigravity) |
 | P1-C | Relationships matrix | ✅ (Antigravity) |
 | P2-A | persona_loader.py | ✅ (Antigravity) |
-| P2-B | debate_orchestrator.py | ✅ (Antigravity) + 🩹 (Claude — 5 bugfixes) |
-| P2-C | FastAPI server | ✅ (Claude — LOG-006) |
-| P3-A | CountryPnLLedger in split | ✅ (Claude — LOG-007) |
-| P3-B | WorldOutcomeSummaryCard | ✅ (Claude — LOG-008) |
-| P3-C | Cascade → debate | ✅ (Claude — LOG-009) |
-| P3-D | Live Debate button | ✅ (Claude — LOG-010) |
+| P2-B | debate_orchestrator.py | ✅ (Antigravity) + 🩹 (Session — 5 bugfixes) |
+| P2-C | FastAPI server | ✅ (Session — LOG-006) |
+| P3-A | CountryPnLLedger in split | ✅ (Session — LOG-007) |
+| P3-B | WorldOutcomeSummaryCard | ✅ (Session — LOG-008) |
+| P3-C | Cascade → debate | ✅ (Session — LOG-009) |
+| P3-D | Live Debate button | ✅ (Session — LOG-010) |
 | P4-A | 1440/1920 layout verify | ⏳ Next session |
 | P4-B | HF Spaces deploy | ⏳ Next session |
 | P4-C | Sizzle reel | ⏳ Next session |
 
 ---
 
-**[agent:claude] [source:claude-code] [action:fix] [by:claude] [scope:worldpolicy-v6.1] [ref:LOG-005]**
+**[action:fix] [scope:worldpolicy-v6.1] [ref:LOG-005]**
 *5 backend bugs fixed, FastAPI server built, 4 frontend features landed. P4 deploy pending.*
 
 ---
@@ -162,7 +162,7 @@ Frontend HTML parse balanced. Canned debate flow end-to-end.
 | `panels.jsx` | ✨ Add `WorldOutcomeSummaryCard` component |
 | `WorldPolicy V6.1.html` | ✨ CountryPnLLedger in split mode · cascade-auto-trigger · Live Debate button · live/canned LED · outcome card mount · reset logic |
 | `worldpolicy.css` | 🏷 Header V5 → V6.1 |
-| `2_claude.md` | ✨ This log |
+| `2_session_log.md` | ✨ This log |
 
 ## Next session (P4)
 
@@ -289,7 +289,7 @@ huggingface-cli upload krishpotanwar/worldpolicy-v6 . --repo-type=space
 | `Dockerfile` | ✨ NEW — python:3.11-slim, port 7860 |
 | `.dockerignore` | ✨ NEW |
 | `README.md` | ✨ NEW — HF Spaces frontmatter + endpoint table |
-| `2_claude.md` | ✨ LOG-012 → LOG-016 |
+| `2_session_log.md` | ✨ LOG-012 → LOG-016 |
 | `/tmp/wp_1440x900.png`, `/tmp/wp_1920x1080.png` | 📸 layout proofs |
 | `/tmp/wp_verify.py` | 🔧 playwright verify script (ephemeral) |
 
@@ -309,7 +309,7 @@ huggingface-cli upload krishpotanwar/worldpolicy-v6 . --repo-type=space
 
 ---
 
-**[agent:claude] [source:claude-code] [action:release] [by:claude] [scope:worldpolicy-v6.1] [ref:LOG-016]**
+**[action:release] [scope:worldpolicy-v6.1] [ref:LOG-016]**
 *P4 prep complete. Deploy artifacts ship-ready. 2 caveats closed (WP_API_BASE + audit rotation). Layout verified both target viewports. Full SSE roundtrip smoke-passed. Push-to-HF + sizzle-reel remain as user-action + recording session.*
 
 ### Known caveats surviving P4

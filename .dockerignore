@@ -12,11 +12,11 @@ uploads
 
 # Dev/planning artifacts — not needed in production container
 1_AntigravityLOG.md
-2_claude.md
-2_claude.original.md
+2_session_log.md
+2_session_log.original.md
 3_antigravityLOG.md
 4_cursorLOG.md
-V6.1-claude-design-prompt.md
+V6.1-frontend-design-prompt.md
 WorldPolicy-V6.1-WIN-Plan.md
 WorldPolicy V5.html
 parallels-main-design-*.md
