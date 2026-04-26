@@ -1,5 +1,25 @@
 /* debate-sim.jsx — SSE-driven debate engine consuming /stream/debate */
 
+const WP_HISTORY_KEY = 'wp_debate_history';
+const WP_HISTORY_MAX = 10;
+
+function _loadDebateHistory() {
+  try {
+    const raw = localStorage.getItem(WP_HISTORY_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (_) { return []; }
+}
+
+function _saveDebateSession(session) {
+  try {
+    const history = _loadDebateHistory();
+    history.unshift(session);
+    if (history.length > WP_HISTORY_MAX) history.length = WP_HISTORY_MAX;
+    localStorage.setItem(WP_HISTORY_KEY, JSON.stringify(history));
+    return history;
+  } catch (_) { return []; }
+}
+
 function useDebateStream() {
   const [state, setState] = React.useState({
     running: false, step: 0, maxSteps: 50,
@@ -27,6 +47,7 @@ function useDebateStream() {
     connectionStatus: 'idle',
     connectionError: null,
     liveMode: 'canned',
+    debateHistory: _loadDebateHistory(),
   });
 
   const stateRef = React.useRef(state);
@@ -163,14 +184,27 @@ function useDebateStream() {
       const data = JSON.parse(e.data);
       _log('debate_end', data);
       closeSSE();
-      setState(prev => ({
-        ...prev,
-        running: false,
-        voteTally: data.vote_tally || prev.voteTally,
-        activeSpeakerId: null,
-        connectionStatus: 'complete',
-        rhetoricAlert: data.rhetoric_alert || prev.rhetoricAlert,
-      }));
+      setState(prev => {
+        const tally = data.vote_tally || prev.voteTally;
+        const session = {
+          timestamp: new Date().toISOString(),
+          crisisType: prev.crisisType,
+          utterances: prev.utterances,
+          voteTally: tally,
+          rounds: prev.currentRound,
+          liveMode: prev.liveMode,
+        };
+        const updatedHistory = _saveDebateSession(session);
+        return {
+          ...prev,
+          running: false,
+          voteTally: tally,
+          activeSpeakerId: null,
+          connectionStatus: 'complete',
+          rhetoricAlert: data.rhetoric_alert || prev.rhetoricAlert,
+          debateHistory: updatedHistory,
+        };
+      });
     });
 
     es.addEventListener('error_event', (e) => {
@@ -347,10 +381,29 @@ function useDebateStream() {
       connectionStatus: 'idle',
       connectionError: null,
       liveMode: 'canned',
+      debateHistory: _loadDebateHistory(),
     });
   }, []);
 
-  return { state, startLive, startCanned, pause, reset };
+  const loadHistory = React.useCallback((session) => {
+    closeSSE();
+    setState(prev => ({
+      ...prev,
+      running: false,
+      utterances: session.utterances || [],
+      voteTally: session.voteTally || null,
+      currentRound: session.rounds || 0,
+      totalRounds: session.rounds || 0,
+      crisisType: session.crisisType || 'natural_disaster',
+      activeSpeakerId: null,
+      connectionStatus: 'complete',
+      connectionError: null,
+      liveMode: session.liveMode || 'canned',
+      roundDividers: [],
+    }));
+  }, []);
+
+  return { state, startLive, startCanned, pause, reset, loadHistory };
 }
 
 Object.assign(window, { useDebateStream });

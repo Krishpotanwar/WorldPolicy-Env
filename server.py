@@ -348,7 +348,7 @@ async def stream_debate(
     crisis_description: str = Query("Severe cyclone hits Bay of Bengal; UNESCO heritage sites at risk."),
     mappo_action: str = Query("AID_DISPATCH_COORDINATED"),
     force_canned: bool = Query(True),
-    max_rounds: int = Query(3, ge=1, le=5),
+    max_rounds: int = Query(3, ge=1, le=3),
 ):
     if crisis_type not in ALLOWED_CRISIS_TYPES:
         raise HTTPException(400, f"unknown crisis_type; allowed: {sorted(ALLOWED_CRISIS_TYPES)}")
@@ -367,7 +367,7 @@ async def live_debate(
     crisis_type: str = Query("natural_disaster"),
     crisis_description: str = Query("Severe cyclone hits Bay of Bengal; UNESCO heritage sites at risk."),
     mappo_action: str = Query("AID_DISPATCH_COORDINATED"),
-    max_rounds: int = Query(3, ge=1, le=5),
+    max_rounds: int = Query(3, ge=1, le=3),
 ):
     """Kick off a live Groq debate (or canned if no key). Returns metadata to subscribe to /stream/debate."""
     if crisis_type not in ALLOWED_CRISIS_TYPES:

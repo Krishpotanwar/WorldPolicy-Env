@@ -108,6 +108,29 @@ CANNED_DEBATES: dict[str, list[dict]] = {
     ],
 }
 
+CANNED_REBUTTALS: dict[str, list[dict]] = {
+    "natural_disaster": {
+        2: [
+            {"speaker": "USA", "stance": "modify", "text": "We hear Russia's concerns about naval presence. The US is willing to place carrier assets under a joint civilian-flagged coordination center — but withdrawal from the theater is not an option when lives are at stake.", "mentioned_countries": ["RUS", "IND"], "authority_citation": None},
+            {"speaker": "RUS", "stance": "oppose", "text": "A joint coordination center is a step forward, but we require equal Russian representation and veto authority over military asset deployment. BRICS financing must be the primary channel, not bilateral Western aid.", "mentioned_countries": ["USA", "CHN", "IND"], "authority_citation": None},
+            {"speaker": "IND", "stance": "support", "text": "India welcomes the compromise on civilian-flagged operations. We will host the coordination center in Chennai and ensure all aid is distributed through our National Disaster Response Force.", "mentioned_countries": ["USA", "RUS"], "authority_citation": None},
+            {"speaker": "CHN", "stance": "modify", "text": "China notes the progress but reiterates that AIIB development financing should complement, not compete with, bilateral aid. We propose a dual-track approach: immediate humanitarian response plus long-term infrastructure reconstruction.", "mentioned_countries": ["USA", "IND", "RUS"], "authority_citation": None},
+            {"speaker": "SAU", "stance": "support", "text": "The Kingdom increases our commitment to $3.5 billion, with conditions: energy infrastructure receives first-priority reconstruction, and Saudi engineering firms participate in rebuilding under transparent procurement rules.", "mentioned_countries": ["IND"], "authority_citation": None},
+            {"speaker": "DPRK", "stance": "oppose", "text": "This 'coordination center' is a rebranded military occupation. The DPRK will not legitimize foreign military presence in the Indo-Pacific regardless of the flag it flies under.", "mentioned_countries": ["USA"], "authority_citation": None},
+            {"speaker": "UNESCO", "stance": "mediate", "text": "The Secretariat notes convergence on civilian-flagged operations. I propose that the Sundarbans emergency inscription include a mandatory 72-hour cultural impact assessment before any heavy machinery enters the heritage buffer zone.", "mentioned_countries": ["IND"], "authority_citation": "WHC-1972 Operational Guidelines Para.177"},
+        ],
+        3: [
+            {"speaker": "IND", "stance": "support", "text": "India formally accepts the civilian coordination framework. We request all parties sign a memorandum within 24 hours. The cyclone season does not wait for diplomatic niceties.", "mentioned_countries": ["USA", "RUS", "CHN"], "authority_citation": None},
+            {"speaker": "RUS", "stance": "modify", "text": "Russia will sign the memorandum with one reservation: any extension of operations beyond 90 days requires a new Security Council mandate. We cannot allow humanitarian missions to become permanent installations.", "mentioned_countries": ["USA", "IND"], "authority_citation": None},
+            {"speaker": "USA", "stance": "support", "text": "The 90-day sunset clause is reasonable. The United States commits to full transparency reporting every 30 days. We call the vote on this amended resolution.", "mentioned_countries": ["RUS", "IND"], "authority_citation": None},
+            {"speaker": "CHN", "stance": "support", "text": "China supports the amended resolution with the sunset clause. We will also channel $1.2 billion through AIIB for the long-term reconstruction track. This demonstrates that multilateral solutions work.", "mentioned_countries": ["RUS", "IND", "USA"], "authority_citation": None},
+            {"speaker": "SAU", "stance": "support", "text": "The Kingdom votes in favor. We look forward to coordinating our energy reconstruction investment with the civilian framework.", "mentioned_countries": ["IND"], "authority_citation": None},
+            {"speaker": "DPRK", "stance": "oppose", "text": "The DPRK maintains its position. 90 days, 900 days — a sunset clause means nothing when the sun never sets on imperialist ambitions.", "mentioned_countries": ["USA"], "authority_citation": None},
+            {"speaker": "UNESCO", "stance": "mediate", "text": "The Secretariat welcomes this resolution. I confirm: the Sundarbans emergency inscription is active, the monitoring mission deploys in 48 hours, and the cultural protection corridor is in effect. This chamber has served its purpose today.", "mentioned_countries": ["IND"], "authority_citation": "WHC-1972 Art.11.4"},
+        ],
+    },
+}
+
 # ── Utterance model ────────────────────────────────────────────────────────────
 
 def make_utterance(agent_id: str, raw: dict, step: int, agents_config: list[dict]) -> dict:
@@ -197,16 +220,23 @@ class DebateOrchestrator:
         sanitized["_model"] = GROQ_MODEL
         return sanitized
 
-    def _get_canned(self, crisis_type: str, agent_order: list[str]) -> list[dict]:
-        """Return canned debate utterances for a crisis type."""
-        base = CANNED_DEBATES.get(crisis_type, CANNED_DEBATES["natural_disaster"])
-        # Reorder to match requested agent_order (skip agents not in canned set)
+    def _get_canned(self, crisis_type: str, agent_order: list[str], round_num: int = 1) -> list[dict]:
+        """Return canned debate utterances, with round-specific rebuttals when available."""
+        if round_num > 1:
+            rebuttals = CANNED_REBUTTALS.get(crisis_type, {})
+            base = rebuttals.get(round_num)
+            if not base:
+                base = rebuttals.get(max(rebuttals.keys())) if rebuttals else None
+            if not base:
+                base = CANNED_DEBATES.get(crisis_type, CANNED_DEBATES["natural_disaster"])
+        else:
+            base = CANNED_DEBATES.get(crisis_type, CANNED_DEBATES["natural_disaster"])
+
         ordered = []
         for agent_id in agent_order:
             match = next((u for u in base if u["speaker"] == agent_id), None)
             if match:
                 ordered.append(match)
-        # Fill remaining from base not yet included
         for u in base:
             if u["speaker"] not in agent_order:
                 ordered.append(u)
@@ -296,7 +326,7 @@ class DebateOrchestrator:
                     self.loader.update_relationship(agent_id, mentioned, raw.get("stance", "neutral"))
 
                 yield utterance
-                await asyncio.sleep(0.1)  # slight delay for frontend streaming effect
+                await asyncio.sleep(1.8)
 
         else:
             # ── CANNED FALLBACK PATH ────────────────────────────────────────
@@ -308,7 +338,7 @@ class DebateOrchestrator:
                 utterance["_live"] = False
                 round_utterances.append(utterance)
                 yield utterance
-                await asyncio.sleep(0.8)  # match frontend debate-sim.jsx tick speed
+                await asyncio.sleep(2.5)
 
         # ── Audit log ──────────────────────────────────────────────────────
         vote_tally = self._compute_vote_tally(round_utterances)
@@ -349,7 +379,7 @@ class DebateOrchestrator:
             round_end    — round vote tally
             debate_end   — final tally + rhetoric alert
         """
-        max_rounds = max(1, min(max_rounds, 5))
+        max_rounds = max(1, min(max_rounds, 3))
         all_utterances: list[dict] = []
         final_tally = None
         current_involvement = dict(involvement)
@@ -404,7 +434,7 @@ class DebateOrchestrator:
                         raw = await asyncio.wait_for(tasks[agent_id], timeout=GROQ_TIMEOUT + 2)
                     except Exception as e:
                         print(f"⚠️  Groq failed for {agent_id} round {round_num}: {e}")
-                        canned = self._get_canned(crisis_type, [agent_id])
+                        canned = self._get_canned(crisis_type, [agent_id], round_num)
                         raw = canned[0] if canned else {
                             "text": f"{agent_id} reserves their position.",
                             "stance": "neutral", "mentioned_countries": [], "authority_citation": None,
@@ -420,9 +450,9 @@ class DebateOrchestrator:
                         self.loader.update_relationship(agent_id, mentioned, raw.get("stance", "neutral"))
 
                     yield {"_event": "utterance", **utterance}
-                    await asyncio.sleep(0.1)
+                    await asyncio.sleep(1.8)
             else:
-                canned = self._get_canned(crisis_type, speaker_order)
+                canned = self._get_canned(crisis_type, speaker_order, round_num)
                 for raw in canned:
                     agent_id = raw["speaker"]
                     utterance = make_utterance(agent_id, raw, current_step, self.AGENTS_CONFIG)
@@ -431,7 +461,7 @@ class DebateOrchestrator:
                     utterance["_live"] = False
                     round_utterances.append(utterance)
                     yield {"_event": "utterance", **utterance}
-                    await asyncio.sleep(0.8)
+                    await asyncio.sleep(2.5)
 
             all_utterances.extend(round_utterances)
             round_tally = self._compute_vote_tally(round_utterances)
@@ -449,7 +479,7 @@ class DebateOrchestrator:
             if not self._should_continue_debate(round_tally, round_num, max_rounds):
                 break
 
-            await asyncio.sleep(0.3)
+            await asyncio.sleep(2.0)
 
         _append_audit({
             "type": "multi_round_debate",
@@ -481,10 +511,18 @@ class DebateOrchestrator:
                ["UNESCO"]
 
     def _build_rebuttal_order(self, involvement: dict, prior_utterances: list[dict]) -> list[str]:
-        """Rebuttal rounds: oppose/modify speakers first, then others, then UNESCO."""
+        """Rebuttal rounds: agents mentioned by others respond first, then
+        oppose/modify speakers, then remaining, then UNESCO last."""
+        mentioned_targets: list[str] = []
         rebuttal_speakers: list[str] = []
         seen: set[str] = set()
+
         for u in reversed(prior_utterances):
+            for m in u.get("mentionedCountries", []):
+                if m != "UNESCO" and m not in seen:
+                    mentioned_targets.append(m)
+                    seen.add(m)
+
             sid = u["speakerId"]
             if sid == "UNESCO" or sid in seen:
                 continue
@@ -492,9 +530,10 @@ class DebateOrchestrator:
                 rebuttal_speakers.append(sid)
                 seen.add(sid)
 
+        priority = mentioned_targets + rebuttal_speakers
         all_agents = self._build_speaker_order(involvement)
         remaining = [a for a in all_agents if a not in seen and a != "UNESCO"]
-        return rebuttal_speakers + remaining + ["UNESCO"]
+        return priority + remaining + ["UNESCO"]
 
     def _get_involvement_level(self, agent_id: str, involvement: dict) -> str:
         if agent_id in involvement.get("involved", []):
@@ -514,16 +553,13 @@ class DebateOrchestrator:
     def _should_continue_debate(self, tally: dict, round_num: int, max_rounds: int) -> bool:
         if round_num >= max_rounds:
             return False
+        if round_num < 2:
+            return True
         oppose = tally.get("oppose", 0)
-        support = tally.get("support", 0)
         modify = tally.get("modify", 0)
         if oppose == 0 and modify == 0:
             return False
-        if oppose > support:
-            return True
-        if modify >= 2:
-            return True
-        return False
+        return True
 
     def _promote_mentioned_nations(self, involvement: dict, utterances: list[dict]) -> dict:
         """Promote nations between involvement tiers based on debate mentions."""

@@ -141,11 +141,9 @@ function RhetoricColdWarAlert({ alert, onDismiss }) {
 }
 
 /* ── ChamberView (theater mode) ── */
-function ChamberView({ activeSpeakerId, utterances, focusedId, voteTally, onFocus, onClearFocus }) {
-  const agents = AGENTS;
-  // Semicircle layout — UNESCO at top center
-  const reordered = [agents[0], agents[1], agents[2], agents[6], agents[3], agents[4], agents[5]]; // UNESCO center
-  const count = reordered.length;
+function ChamberView({ activeSpeakerId, utterances, focusedId, voteTally, onFocus, onClearFocus,
+  roundDividers, currentRound, totalRounds, connectionStatus, connectionError, debateStep,
+  debateHistory, onLoadHistory }) {
 
   return React.createElement('div', {
     style: {
@@ -153,57 +151,11 @@ function ChamberView({ activeSpeakerId, utterances, focusedId, voteTally, onFocu
       background: 'radial-gradient(ellipse at 50% 80%, rgba(59,130,246,0.04) 0%, #050810 60%)',
     }
   },
-    // Semicircle portraits
-    React.createElement('div', {
-      style: {
-        position: 'relative', height: 220, flexShrink: 0,
-        margin: '20px auto', width: '100%', maxWidth: 700,
-        overflow: 'visible',
-      }
-    },
-      reordered.map((agent, i) => {
-        // Tighter arc: -70° to +70° (140° spread) to keep agents within bounds
-        const angle = -70 + (140 / (count - 1)) * i;
-        const rad = angle * Math.PI / 180;
-        // Use percentage-based positioning relative to the container
-        const x = 50 + Math.sin(rad) * 42; // 42% spread from center
-        const y = 30 + (1 - Math.cos(rad)) * 90; // vertical arc depth
-        const isActive = activeSpeakerId === agent.id;
-
-        return React.createElement('div', {
-          key: agent.id,
-          style: {
-            position: 'absolute', left: x + '%', top: y,
-            transform: 'translateX(-50%)' + (isActive ? ' scale(1.3) translateY(-16px)' : ''),
-            transition: 'all 0.5s cubic-bezier(0.16,1,0.3,1)',
-            zIndex: isActive ? 10 : 1,
-          }
-        },
-          // Spotlight for active
-          isActive && React.createElement('div', {
-            style: {
-              position: 'absolute', top: -100, left: '50%', transform: 'translateX(-50%)',
-              width: 120, height: 160,
-              background: 'conic-gradient(from 180deg at 50% 0%, transparent 150deg, ' + agent.tint + '20 170deg, ' + agent.tint + '30 180deg, ' + agent.tint + '20 190deg, transparent 210deg)',
-              pointerEvents: 'none',
-            }
-          }),
-          React.createElement(AgentPortrait, {
-            agent,
-            isActive,
-            isInvolved: true,
-            isPeripheral: false,
-            isFocused: focusedId === agent.id,
-            tooltip: null,
-            onClick: () => onFocus(agent.id),
-          }),
-        );
-      }),
-    ),
-    // Transcript — larger font
-    React.createElement('div', { style: { flex: 1, margin: '0 40px', minHeight: 0 } },
+    React.createElement('div', { style: { flex: 1, margin: '0 24px', minHeight: 0, display: 'flex' } },
       React.createElement(DebateTranscriptPanel, {
         utterances, activeSpeakerId, focusedId, voteTally, onClearFocus,
+        roundDividers, currentRound, totalRounds, connectionStatus, connectionError, debateStep,
+        debateHistory, onLoadHistory,
       }),
     ),
   );
