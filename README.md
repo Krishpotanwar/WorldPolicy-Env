@@ -451,7 +451,7 @@ Secrets are configured in the HF Space settings panel — never committed to the
 - [x] no secrets committed
 - [x] Blog written and linked (BLOG.md)
 - [x] Colab training notebook linked (train.ipynb via Open in Colab badge)
-- [ ] Add video link to hero section when available
+- [x] Blog covers writeup requirement (video skipped — blog OR video, blog chosen)
 ```
 
 ---
