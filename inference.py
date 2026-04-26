@@ -17,7 +17,7 @@ Inference API — same `MODEL_NAME` / `API_BASE_URL` / `HF_TOKEN` convention as
 All LLM calls go through the OpenAI client (per plan: API_BASE_URL, MODEL_NAME, HF_TOKEN).
 
 Required env vars:
-    API_BASE_URL  — default: https://api-inference.huggingface.co/v1
+    API_BASE_URL  — default: https://router.huggingface.co/v1
     MODEL_NAME    — default: krishpotanwar/worldpolicy-grpo-3b
     HF_TOKEN      — required for live LLM stages (Stage 2-4)
     ENV_URL       — default: http://127.0.0.1:7860 (the running WorldPolicy server)

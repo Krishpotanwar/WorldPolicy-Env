@@ -54,9 +54,10 @@ def _hf_base_candidates(base_url: str) -> list[str]:
     raw = (base_url or "").strip()
     if not raw:
         return []
+    # api-inference.huggingface.co does not support /v1/chat/completions; redirect to router.
+    if "api-inference.huggingface.co" in raw:
+        raw = "https://router.huggingface.co/v1"
     candidates = [raw]
-    if "api-inference.huggingface.co" in raw and "router.huggingface.co" not in raw:
-        candidates.append("https://router.huggingface.co/v1")
     if not raw.rstrip("/").endswith("/v1"):
         candidates.append(raw.rstrip("/") + "/v1")
     deduped = []
@@ -612,8 +613,8 @@ class DebateOrchestrator:
                 print(f"⚠️  HF model call failed for {agent_id} via {base}: {type(e).__name__}: {e}")
                 continue
 
-        # Auto-fallback when account/provider doesn't support the primary fine-tuned model.
-        if not raw_text and last_err is not None and "model_not_supported" in str(last_err):
+        # Auto-fallback when primary fine-tuned model fails (unsupported by provider or wrong endpoint).
+        if not raw_text and last_err is not None:
             for base, client in self._hf_clients:
                 try:
                     resp = await client.chat.completions.create(
