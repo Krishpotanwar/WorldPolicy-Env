@@ -116,11 +116,13 @@ And every original demo route is preserved (`/persona/{id}`, `/relationship-matr
 
 ### The Three Graduated Tasks
 
-| Task | Difficulty | Crisis | Active agents | Max steps | Target reward range |
+All tasks include **all 7 agents** (USA, CHN, RUS, IND, DPRK, SAU, UNESCO). `primary_agents` controls speaker priority — primary agents speak first, others follow, UNESCO closes as mediator.
+
+| Task | Difficulty | Crisis | Primary agents | Max steps | Target reward range |
 |---|---|---|---|---|---|
-| `task_1` | easy | natural_disaster | USA, IND, UNESCO | 5 | 0.65 – 0.85 |
-| `task_2` | medium | trade_war | USA, CHN, IND, SAU, RUS | 8 | 0.40 – 0.65 |
-| `task_3` | hard | arms_race + DPRK nuclear escalation trigger at step 4 | All 7 | 10 | 0.20 – 0.45 |
+| `task_1` | easy | natural_disaster | USA, IND | 5 | 0.65 – 0.85 |
+| `task_2` | medium | trade_war | USA, CHN, IND | 8 | 0.40 – 0.65 |
+| `task_3` | hard | arms_race + DPRK nuclear escalation trigger at step 4 | USA, CHN, RUS, DPRK | 10 | 0.20 – 0.45 |
 
 Reward is normalized to `[0, 1]` via the DisasterMan formula: `(tanh(cumul_reward / max_steps * 2) + 1) / 2`.
 
@@ -305,10 +307,11 @@ If UNESCO speaks outside its mandate (military, trade), the UI flags `ADVISORY �
       │
 ┌─────▼──────────────────────────────────────────────────────────────┐
 │  debate_orchestrator.py + persona_loader.py                         │
-│  Live path: Groq AsyncGroq (Llama 3.3-70b) per agent in parallel    │
+│  Live path: Groq AsyncGroq (Llama 3.3-70b) per agent, 3 rounds     │
 │  Each prompt = persona.md + GDELT events + sentiment + crisis +     │
-│                relationship matrix + grudge memory                  │
-│  Canned fallback: 7 utterances per crisis_type (when no GROQ key)   │
+│                relationship matrix + grudge memory + prior rounds   │
+│  Canned fallback: 7 speakers × 3 rounds × 13 crisis types          │
+│  Dynamic rebuttal ordering: mentions → opposition → remaining       │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -332,10 +335,11 @@ WorldPolicy-Env/
 │ ── Live data layers (P1 / P2 / P3 / P4) ──
 ├── live_data.py                 # GDELT crises + WB baselines + GDELT sentiment
 ├── market_data.py               # yfinance company prices + country indices
+├── crisis_types.py              # Single source of truth for all 13 crisis types
 │
 │ ── Backend ──
 ├── server.py                    # FastAPI app (create_app + 27 routes)
-├── debate_orchestrator.py       # Groq LLM debate engine + canned fallback
+├── debate_orchestrator.py       # Multi-round Groq debate (3 rounds × 7 speakers) + canned fallback
 ├── persona_loader.py            # Persona loading + system prompt builder
 │
 │ ── Data ──
@@ -349,14 +353,15 @@ WorldPolicy-Env/
 │ ── Frontend (single-file React via Babel-standalone) ──
 ├── WorldPolicy V6.1.html        # SPA entry point
 ├── worldpolicy.css              # Liquid Glass design system
-├── globe.jsx                    # 3D globe + activeSpeakerId pulse
-├── portraits.jsx                # AgentPortraitStrip + sentiment chip
-├── debate.jsx                   # DebateTranscriptPanel + StancePill + VoteBar
-├── debate-sim.jsx               # Scripted debate engine (canned fallback) + market poll
-├── chamber.jsx                  # Theater-mode semicircle layout
-├── pnl.jsx                      # CountryPnLLedger + CompanyPnLStrip + LIVE badge
-├── panels.jsx                   # Glass panels + WorldOutcomeSummaryCard
-├── sim.jsx                      # V5 simulation engine (cascade events)
+├── agents.js                    # Single source of truth: agent roster, arc colors, stance map, companies
+├── globe.jsx                    # 2D canvas globe + activeSpeakerId pulse + debate arcs
+├── portraits.jsx                # AgentPortraitStrip + sentiment chip (imports from agents.js)
+├── debate.jsx                   # DebateTranscriptPanel + TypewriterText + ThinkingIndicator + VoteBar
+├── debate-sim.jsx               # Multi-round SSE debate controller + market poll + debate history
+├── chamber.jsx                  # Theater-mode layout + UNESCOMediatorCard + RhetoricAlert
+├── pnl.jsx                      # CountryPnLLedger + CompanyPnLStrip + LIVE/DEMO badge
+├── panels.jsx                   # Glass panels + EvalSummaryCard (dynamic %) + WorldOutcomeSummaryCard
+├── sim.jsx                      # V5 simulation engine (cascade events, [DEMO] marked)
 │
 │ ── Build / deploy ──
 ├── Dockerfile                   # python:3.11-slim, port 7860, RUN scorer training
@@ -480,6 +485,27 @@ The Dockerfile bakes the trained `scorer_weights.pt` into the image at build tim
 
 ---
 
+## 🎭 Multi-Round Debate System
+
+Debates run up to **3 rounds** with **all 7 agents** speaking each round (up to 21 utterances per debate). The system adapts dynamically:
+
+**Round structure:**
+- **Round 1** — Speaker order from task `primary_agents` first, then remaining agents, UNESCO closes
+- **Round 2+** — Rebuttal order: agents mentioned by name in prior rounds speak first, then agents who opposed/modified, then remaining, UNESCO closes
+- **Continue logic** — Debate continues if any agent still opposes or modifies after round 2; stops early if consensus reached
+
+**UX features:**
+- **TypewriterText** — Each utterance reveals word-by-word for a natural reading feel
+- **ThinkingIndicator** — Shows which agent is preparing their response (with agent tint color)
+- **DebateOutcomeBanner** — Inline summary after debate ends (passed/failed, vote breakdown)
+- **Debate session history** — Past debates saved to `localStorage`, scrollable in the transcript panel
+- **Globe arcs** — Diplomatic actions (AID/SANCTION/TRADE) animate on the globe in real-time as agents speak
+
+**Crisis coverage:**
+All **13 crisis types** have full canned content (round 1 + rounds 2-3 rebuttals, 7 speakers each): `natural_disaster`, `arms_race`, `trade_war`, `cultural_destruction`, `heritage_at_risk`, `gdp_shock`, `education_collapse`, `bloc_formation`, `alliance_rupture`, `regime_change`, `military_escalation`, `war_outbreak`, `sanctions`.
+
+---
+
 ## 🔍 What's Live vs Hardcoded — Honesty Table
 
 A direct, no-sugarcoating breakdown for judges and reviewers:
@@ -492,27 +518,45 @@ A direct, no-sugarcoating breakdown for judges and reviewers:
 | Country P&L baselines | World Bank API per indicator | India GDP returned 3.91T live (real 2024 value, beats 2023 fallback of 3.55T) |
 | Stock prices | yfinance | AAPL $271.06, BYDDY $12.94, RELIANCE.NS ₹1327.80, Aramco ﷼27.22, S&P 7165, Hang Seng 25978, Nifty 23897 |
 | Public sentiment | GDELT `mode=tonechart` (24h) | Tone in [-10, +10] per country, mapped to 5-tier label |
-| LLM debate utterances | Groq Llama 3.3-70b, parallel per agent | **Only when `GROQ_API_KEY` is set** |
+| LLM debate utterances | Groq Llama 3.3-70b, 7 agents × 3 rounds | **Only when `GROQ_API_KEY` is set** — up to 21 utterances per debate |
+| UNESCO authority scope | Parsed from `authorityCitation` in SSE payload | Dynamic per-utterance; UI renders convention chips from server data |
 | Persona context (live events) | GDELT 24h headlines per country, injected into system prompt | Active on the live Groq path |
 | World stability score | PyTorch StabilityScorer (trained weights) | Returns real `[0,1]` from feature vector |
 | Reward | MOGSR grader (deterministic from round_result) | Returns floats in `[-1, 2]`; episode normalized to `[0,1]` |
 | Relationship matrix updates | Mutated by `DebateOrchestrator` after each live round | Saved atomically to `data/relationships.json` |
+| Agent roster | `agents.js` (frontend) / `AGENTS_CONFIG` (backend) | Single source of truth — IDs, names, tints, globe coordinates |
+| Crisis type registry | `crisis_types.py` — 13 types with GDELT keywords, display names | Imported by `server.py`, `live_data.py`; no duplicate definitions |
 
-### ⚠️ HARDCODED (still scripted, intentionally)
+### ⚠️ HARDCODED (still scripted, intentionally — all marked `[DEMO]` or `_demo: true`)
 
 | Layer | Where | Honest framing |
 |---|---|---|
-| The SPA's scripted debate flow (14 utterances) | `debate-sim.jsx` `DEBATE_SCRIPT` | This is what plays when no `GROQ_API_KEY` is set. Visual demo. |
-| Company tick **schedule** (which symbols animate at which step) | `_SCRIPTED_COMPANY_TICKS` + `COMPANY_UPDATES` | Cadence is scripted; **price/pct values are LIVE-overridden** by the `/market-data` poll. |
-| Rhetoric Cold War alert trigger | `debate-sim.jsx:103` (step 31) | UI gimmick. The plan called this out. |
-| Final vote tally in canned SPA flow | `debate-sim.jsx:113` (`{support:3, oppose:2, modify:1}` at step 45) | Only for the SPA fallback. The OpenEnv `/step` returns a real vote tally from the orchestrator. |
-| Heritage-at-risk site list | `debate-sim.jsx:42` | UI prop, not used in reward |
+| Canned debate utterances (all 13 crisis types) | `debate_orchestrator.py CANNED_DEBATES + CANNED_REBUTTALS` | 7 speakers × 3 rounds × 13 types. Used only when `GROQ_API_KEY` unset. Flagged as canned in SSE. |
+| Company tick schedule | `_SCRIPTED_COMPANY_TICKS` (flagged `_demo: true`) | Cadence is scripted; **price/pct values are LIVE-overridden** by `/market-data` poll. UI shows `DEMO DATA` badge when using fallback. |
+| SPA simulation script | `sim.jsx SCRIPT` (marked `[DEMO]`) | Cascade events for offline demo only; each brief carries `_demo: true` flag. |
+| Eval summary data | `EVAL_DATA` in HTML (marked `[DEMO]`) | Percentage computed dynamically from data props, not hardcoded "+25.1%". |
+| Training provenance table | `panels.jsx TrainingFactsCard` (marked `[DEMO]`) | Architecture facts ("50k steps", "mappo_50k.pt") — demo scaffold. |
 | Initial relationship matrix | `data/relationships.json` (static seed) | Updates live during live Groq runs |
-| Canned debate utterances per crisis | `debate_orchestrator.py CANNED_DEBATES` | Used only when `GROQ_API_KEY` unset |
 | Per-step P&L deltas in `environment.step()` | `_apply_pnl_deltas` (`gdp_factor = 1.005 if vote_passed else 0.995`) | Heuristic feeding the stability score |
 | Reward signal heuristics | `_run_round` derives `civilian_harm_index`, `gdp_growth_rate`, etc. from `vote_passed` boolean with hand-picked coefficients | Scaffolds the multi-objective scorer; replaceable with real metrics if the env grows |
 
-**Bottom line:** the OpenEnv RL contract and the data layers are real. The SPA's scripted demo flow has hardcoded animation cues. The LLM debate is real **only if `GROQ_API_KEY` is set**.
+### 🔄 RECENTLY DE-HARDCODED (was static, now dynamic)
+
+| What | Was | Now |
+|---|---|---|
+| Agent roster (IDs, names, tints) | Duplicated across 7 frontend files with conflicts | Single source: `agents.js` (frontend), `AGENTS_CONFIG` (backend) |
+| UNESCO authority scope chips | Hardcoded `['Article 1.2 — Heritage Conservation', ...]` in HTML | Parsed from `unescoUtterance.authorityCitation` SSE payload |
+| `isAuthoritative` badge | Hardcoded `true` in HTML | Driven by `unescoUtterance.isAuthoritative` from backend |
+| Task active agents | task_1 had only 3 agents; task_2 had 5 | All tasks: 7 agents with `primary_agents` ordering |
+| `_derive_involvement` | Capped at `[:3]` involved agents | Uses task `primary_agents` for ordering; no cap |
+| SSE `world_state` | Magic numbers: `step: 40`, `welfare_index: 0.42` | Derived from task `max_steps` and crisis description |
+| Arc/stance colors | Duplicated in `globe.jsx`, `debate-sim.jsx`, `debate.jsx`, HTML | Shared `ARC_COLORS` and `STANCE_MAP` constants in `agents.js` |
+| Crisis type definitions | Fragmented: 13 in server, 8 in live_data, 5 in canned, 4 in tasks | `crisis_types.py` registry imported by all modules |
+| Canned debate coverage | 5 crisis types, 3-4 speakers, round 1 only | 13 crisis types, 7 speakers, 3 rounds |
+| Scenario header | Static "South Asia Cyclone + Geopolitical Crisis" | Driven from `debate.crisisType` or `sim.brief.crisis_type` |
+| Eval "+25.1%" claim | Hardcoded string | Computed: `((mappo.mean - ruleBased.mean) / ruleBased.mean * 100).toFixed(1)` |
+
+**Bottom line:** the OpenEnv RL contract and the data layers are real. Demo/canned content is explicitly flagged with `[DEMO]` labels and `_demo: true` fields. The LLM debate is real **only if `GROQ_API_KEY` is set**.
 
 ---
 
