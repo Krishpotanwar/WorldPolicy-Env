@@ -27,6 +27,8 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
+from crisis_types import CRISIS_KEYWORDS as _REGISTRY_KEYWORDS
+
 GDELT_API = "https://api.gdeltproject.org/api/v2/doc/doc"
 WB_API_TPL = "https://api.worldbank.org/v2/country/{code}/indicator/{indicator}"
 
@@ -50,16 +52,7 @@ def _store(key: str, data: Any) -> None:
 
 # ── P1: GDELT live crisis headlines ──────────────────────────────────────────
 
-CRISIS_KEYWORDS: Dict[str, str] = {
-    "natural_disaster":     "cyclone earthquake tsunami flood disaster humanitarian",
-    "arms_race":            "nuclear weapons arms race military buildup missile",
-    "trade_war":            "trade war tariffs sanctions economic coercion",
-    "cultural_destruction": "heritage UNESCO destruction cultural artifact",
-    "heritage_at_risk":     "world heritage site endangered cultural risk",
-    "military_escalation":  "military escalation troops border conflict",
-    "war_outbreak":         "war outbreak invasion military attack",
-    "sanctions":            "economic sanctions embargo financial",
-}
+CRISIS_KEYWORDS = _REGISTRY_KEYWORDS
 
 CRISIS_FALLBACKS: Dict[str, Dict[str, Any]] = {
     "natural_disaster": {

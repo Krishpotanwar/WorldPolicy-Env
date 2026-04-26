@@ -41,6 +41,7 @@
   })();
 </script>
 
+<script src="agents.js"></script>
 <script type="text/babel" src="globe.jsx"></script>
 <script type="text/babel" src="panels.jsx"></script>
 <script type="text/babel" src="sim.jsx"></script>
@@ -52,6 +53,7 @@
 
 <script type="text/babel">
 
+/* [DEMO] Evaluation data — replace with /eval-summary endpoint when backend eval pipeline is live */
 const EVAL_DATA = [
   { name: 'Random', mean: 0.61, std: 0.08, color: '#6b7280' },
   { name: 'Rule-Based', mean: 1.87, std: 0.12, color: '#f59e0b' },
@@ -173,7 +175,9 @@ function App() {
       React.createElement(LayoutModeToggle, { mode, onChange: setMode }),
       React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 8 } },
         React.createElement('span', { style: { fontFamily: 'var(--font-mono)', fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: '1px' } }, 'SCENARIO:'),
-        React.createElement('span', { style: { fontFamily: 'var(--font-mono)', fontSize: 10, color: 'rgba(255,255,255,0.6)' } }, 'South Asia Cyclone + Geopolitical Crisis'),
+        React.createElement('span', { style: { fontFamily: 'var(--font-mono)', fontSize: 10, color: 'rgba(255,255,255,0.6)' } },
+          (debate.crisisType || sim.brief?.crisis_type || 'natural_disaster').replace(/_/g, ' ').toUpperCase()
+        ),
       ),
       React.createElement('div', { style: { fontFamily: 'var(--font-mono)', fontSize: 9, color: 'rgba(255,255,255,0.2)' } },
         'Keys: G=Globe  S=Split  T=Theater'),
@@ -256,7 +260,7 @@ function App() {
                 position: 'absolute', bottom: 12, left: 12, display: 'flex', gap: 10,
                 background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(12px)', borderRadius: 6, padding: '4px 10px',
               } },
-                [['SANCTION','#ef4444'],['AID','#3b82f6'],['TRADE','#22c55e']].map(([l,c]) =>
+                [['SANCTION',ARC_COLORS.SANCTION],['AID',ARC_COLORS.AID],['TRADE',ARC_COLORS['TRADE']]].map(([l,c]) =>
                   React.createElement('div', { key: l, style: { display: 'flex', alignItems: 'center', gap: 4 } },
                     React.createElement('div', { style: { width: 12, height: 2, background: c, borderRadius: 1 } }),
                     React.createElement('span', { style: { fontSize: 8, color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--font-mono)' } }, l),
@@ -300,9 +304,11 @@ function App() {
             debate.unescoUtterance && React.createElement('div', { style: { flexShrink: 0 } },
               React.createElement(UNESCOMediatorCard, {
                 utterance: debate.unescoUtterance,
-                authorityScope: ['Article 1.2 — Heritage Conservation', 'Convention 2003 — ICH', 'Rapid Response Mechanism'],
+                authorityScope: debate.unescoUtterance.authorityCitation
+                  ? debate.unescoUtterance.authorityCitation.split(';').map(s => s.trim()).filter(Boolean)
+                  : [],
                 heritageAtRisk: debate.heritageAtRisk,
-                isAuthoritative: true,
+                isAuthoritative: debate.unescoUtterance.isAuthoritative || false,
               }),
             ),
             // Country P&L ledger — fixed natural height, no shrink

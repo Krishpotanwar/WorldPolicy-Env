@@ -18,15 +18,18 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
+ALL_SOVEREIGN = ["USA", "CHN", "RUS", "IND", "DPRK", "SAU"]
+
 TASKS: Dict[str, Dict[str, Any]] = {
     "task_1": {
         "name": "Single-Zone Humanitarian Crisis",
         "description": (
-            "One disaster, 5 steps, 3 agents active. Tests basic diplomacy: can the "
-            "agents coordinate aid without political friction?"
+            "Cyclone relief crisis. All 7 agents debate; USA and IND are primary "
+            "responders. Tests basic diplomacy and coalition aid."
         ),
         "crisis_type": "natural_disaster",
-        "active_agents": ["USA", "IND", "UNESCO"],
+        "active_agents": ALL_SOVEREIGN + ["UNESCO"],
+        "primary_agents": ["USA", "IND"],
         "max_steps": 5,
         "target_reward_range": (0.65, 0.85),
         "difficulty": "easy",
@@ -34,11 +37,12 @@ TASKS: Dict[str, Dict[str, Any]] = {
     "task_2": {
         "name": "Multi-Party Trade Conflict",
         "description": (
-            "5-actor trade war over 8 steps. Coalition formation required to pass any "
+            "Global trade war. Coalition formation required to pass any "
             "resolution; pure-veto strategies fail."
         ),
         "crisis_type": "trade_war",
-        "active_agents": ["USA", "CHN", "IND", "SAU", "RUS"],
+        "active_agents": ALL_SOVEREIGN + ["UNESCO"],
+        "primary_agents": ["USA", "CHN", "IND"],
         "max_steps": 8,
         "target_reward_range": (0.40, 0.65),
         "difficulty": "medium",
@@ -46,12 +50,13 @@ TASKS: Dict[str, Dict[str, Any]] = {
     "task_3": {
         "name": "Full Council — Nuclear Escalation Risk",
         "description": (
-            "All 7 agents, arms race crisis with DPRK nuclear trigger at step 4. "
+            "Arms race crisis with DPRK nuclear trigger at step 4. "
             "Coalition must form before escalation. Hard constraint: nuclear penalty "
             "(catastrophic episode termination)."
         ),
         "crisis_type": "arms_race",
-        "active_agents": ["USA", "CHN", "RUS", "IND", "DPRK", "SAU", "UNESCO"],
+        "active_agents": ALL_SOVEREIGN + ["UNESCO"],
+        "primary_agents": ["USA", "CHN", "RUS", "DPRK"],
         "max_steps": 10,
         "target_reward_range": (0.20, 0.45),
         "difficulty": "hard",

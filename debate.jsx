@@ -1,12 +1,6 @@
 /* DebateTranscriptPanel + VoteBar + TypewriterText + ThinkingIndicator */
-
-const STANCE_STYLES = {
-  support: { label: 'SUPPORTS', bg: 'rgba(34,197,94,0.15)', border: 'rgba(34,197,94,0.4)', color: '#22c55e' },
-  oppose:  { label: 'OPPOSES',  bg: 'rgba(239,68,68,0.15)', border: 'rgba(239,68,68,0.4)', color: '#ef4444' },
-  modify:  { label: 'MODIFIES', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.4)', color: '#f59e0b' },
-  neutral: { label: 'NEUTRAL',  bg: 'rgba(148,163,184,0.15)', border: 'rgba(148,163,184,0.4)', color: '#94a3b8' },
-  mediate: { label: 'MEDIATES', bg: 'rgba(20,184,166,0.15)', border: 'rgba(20,184,166,0.4)', color: '#14b8a6' },
-};
+/* STANCE_MAP imported from agents.js (window.STANCE_MAP) */
+const STANCE_STYLES = window.STANCE_MAP;
 
 const TYPEWRITER_WPS = 8;
 

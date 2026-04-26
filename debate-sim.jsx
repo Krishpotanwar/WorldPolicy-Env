@@ -74,10 +74,7 @@ function useDebateStream() {
     const seen = new Set();
     utterances.forEach(u => {
       const mentions = u.mentionedCountries || [];
-      const type = u.stance === 'support' ? 'AID'
-        : u.stance === 'oppose' ? 'SANCTION'
-        : u.stance === 'modify' ? 'TRADE'
-        : 'TRADE';
+      const type = (STANCE_MAP[u.stance] || STANCE_MAP.neutral).type;
       mentions.forEach(target => {
         const key = u.speakerId + '->' + target + ':' + type;
         if (!seen.has(key) && u.speakerId !== target) {

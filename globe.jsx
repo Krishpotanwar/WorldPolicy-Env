@@ -1,19 +1,5 @@
 /* Globe — accurate country boundaries from Natural Earth 110m TopoJSON */
-
-// 7-agent council. P1 plan: marker entries must exist for every speakerId so the
-// debate-driven activeSpeaker pulse can find a coordinate. GBR + BRA kept as
-// neutral-coloured nodes for visual variety.
-const COUNTRIES_MARKERS = [
-  { id: 'USA',    name: 'United States',  lat: 38.9,  lon: -77.0,  color: '#3b82f6' },
-  { id: 'RUS',    name: 'Russia',         lat: 55.8,  lon: 37.6,   color: '#ef4444' },
-  { id: 'CHN',    name: 'China',          lat: 39.9,  lon: 116.4,  color: '#f59e0b' },
-  { id: 'IND',    name: 'India',          lat: 28.6,  lon: 77.2,   color: '#22c55e' },
-  { id: 'DPRK',   name: 'North Korea',    lat: 39.0,  lon: 125.8,  color: '#ef4444' },
-  { id: 'SAU',    name: 'Saudi Arabia',   lat: 24.7,  lon: 46.7,   color: '#22c55e' },
-  { id: 'UNESCO', name: 'UNESCO (Paris)', lat: 48.85, lon: 2.35,   color: '#14b8a6' },
-  { id: 'GBR',    name: 'United Kingdom', lat: 51.5,  lon: -0.1,   color: '#8b5cf6' },
-  { id: 'BRA',    name: 'Brazil',         lat: -15.8, lon: -47.9,  color: '#14b8a6' },
-];
+/* COUNTRIES_MARKERS imported from agents.js (window.COUNTRIES_MARKERS) */
 
 // Orthographic projection
 function ortho(lat, lon, cx, cy, R, cLon, cLat) {
@@ -315,7 +301,7 @@ function GlobeCanvas({ step, arcs, disasterCountry, activeSpeakerId, debateArcs,
         if(!f||!t||f.z<0||t.z<0) return;
         const mx=(f.x+t.x)/2, d=Math.hypot(t.x-f.x,t.y-f.y);
         const my=(f.y+t.y)/2-d*0.38;
-        const col=arc.type==='SANCTION'?'#ef4444':arc.type==='AID'?'#3b82f6':arc.type==='TRADE'?'#22c55e':'#f59e0b';
+        const col=ARC_COLORS[arc.type]||ARC_COLORS.DEFAULT;
 
         ctx.beginPath(); ctx.moveTo(f.x,f.y); ctx.quadraticCurveTo(mx,my,t.x,t.y);
         ctx.strokeStyle=col+'25'; ctx.lineWidth=arc.type==='AID'?8:5;
@@ -344,7 +330,7 @@ function GlobeCanvas({ step, arcs, disasterCountry, activeSpeakerId, debateArcs,
         Object.entries(stanceGroups).forEach(([type, agents]) => {
           if (agents.size < 3) return;
           const agentList = Array.from(agents);
-          const col = type === 'AID' ? '#22c55e' : type === 'SANCTION' ? '#ef4444' : '#f59e0b';
+          const col = ARC_COLORS[type] || ARC_COLORS.DEFAULT;
           for (let i = 0; i < agentList.length; i++) {
             for (let j = i + 1; j < agentList.length; j++) {
               const fa = pos[agentList[i]], fb = pos[agentList[j]];

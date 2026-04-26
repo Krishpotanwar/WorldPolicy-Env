@@ -58,6 +58,7 @@ from graders import grade_episode
 from models import WorldPolicyAction, WorldPolicyObservation
 from persona_loader import PersonaLoader
 from tasks import list_tasks, TASKS
+from crisis_types import ALLOWED_CRISIS_TYPES as _ALLOWED_CRISIS
 
 # Optional: live-data layer (added in P1). Guarded so server still boots if missing.
 try:
@@ -82,12 +83,7 @@ INDEX_HTML = ROOT / "WorldPolicy V6.1.html"
 AGENT_IDS = {"USA", "CHN", "RUS", "IND", "DPRK", "SAU", "UNESCO"}
 
 # V6: Input validation allowlists
-ALLOWED_CRISIS_TYPES = {
-    "natural_disaster", "arms_race", "trade_war", "cultural_destruction",
-    "heritage_at_risk", "education_collapse", "military_escalation",
-    "war_outbreak", "sanctions", "gdp_shock", "bloc_formation",
-    "alliance_rupture", "regime_change",
-}
+ALLOWED_CRISIS_TYPES = _ALLOWED_CRISIS
 MAX_DESCRIPTION_LEN = 500
 MAX_ACTION_LEN = 100
 
@@ -296,22 +292,23 @@ def get_vote(round_id: str):
 _ALL_AGENTS = ["USA", "CHN", "RUS", "IND", "DPRK", "SAU", "UNESCO"]
 
 _DEFAULT_INVOLVEMENT = {
-    "involved": ["USA", "IND", "SAU"],
-    "peripheral": ["CHN", "RUS", "UNESCO"],
-    "uninvolved": ["DPRK"],
+    "involved": ["USA", "CHN", "RUS", "IND", "DPRK", "SAU"],
+    "peripheral": ["UNESCO"],
+    "uninvolved": [],
 }
 
 
 def _derive_involvement(crisis_type: str) -> dict:
-    """Derive involvement tiers from task config's active_agents list."""
+    """Derive involvement tiers from task config. All sovereign agents speak;
+    primary_agents go first, rest follow, UNESCO always last."""
     for task_cfg in TASKS.values():
         if task_cfg.get("crisis_type") == crisis_type:
             active = task_cfg["active_agents"]
-            involved = [a for a in active if a != "UNESCO"][:3]
-            peripheral = [a for a in active if a not in involved]
+            primary = task_cfg.get("primary_agents", [])
+            sovereign = [a for a in active if a != "UNESCO"]
+            involved = [a for a in sovereign if a in primary]
+            peripheral = [a for a in sovereign if a not in primary] + ["UNESCO"]
             uninvolved = [a for a in _ALL_AGENTS if a not in active]
-            if "UNESCO" not in peripheral and "UNESCO" not in involved:
-                peripheral.append("UNESCO")
             return {"involved": involved, "peripheral": peripheral, "uninvolved": uninvolved}
     return dict(_DEFAULT_INVOLVEMENT)
 
@@ -324,7 +321,14 @@ async def _debate_event_stream(
     max_rounds: int,
 ) -> AsyncIterator[str]:
     involvement = _derive_involvement(crisis_type)
-    world_state = {"step": 40, "welfare_index": 0.42, "active_crises": [crisis_type]}
+    task_cfg = next((t for t in TASKS.values() if t.get("crisis_type") == crisis_type), None)
+    max_steps = task_cfg["max_steps"] if task_cfg else 10
+    world_state = {
+        "step": max_steps // 2,
+        "welfare_index": 0.50,
+        "active_crises": [crisis_type],
+        "crisis_description": crisis_description,
+    }
 
     try:
         async for event in _orchestrator.run_multi_round_debate(
@@ -445,11 +449,11 @@ def _build_company_ticks_with_live() -> list[dict]:
     market layer is missing or returned no live data for that symbol.
     """
     if not _MARKET_DATA_OK:
-        return _SCRIPTED_COMPANY_TICKS
+        return [{**t, "_demo": True, "live": False} for t in _SCRIPTED_COMPANY_TICKS]
     try:
         live = {c["symbol"]: c for c in get_company_prices() or []}
     except Exception:
-        return _SCRIPTED_COMPANY_TICKS
+        return [{**t, "_demo": True, "live": False} for t in _SCRIPTED_COMPANY_TICKS]
     out = []
     for tick in _SCRIPTED_COMPANY_TICKS:
         sym = tick["symbol"]
@@ -459,8 +463,10 @@ def _build_company_ticks_with_live() -> list[dict]:
             merged["price"] = live_row["price"]
             merged["pct"]   = live_row["pct"]
             merged["live"]  = True
+            merged["_demo"] = False
         else:
             merged["live"]  = False
+            merged["_demo"] = True
         out.append(merged)
     return out
 

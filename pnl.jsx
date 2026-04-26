@@ -81,14 +81,7 @@ function CountryPnLLedger({ rows, activeSpeakerId }) {
 }
 
 /* ── CompanyPnLStrip ── */
-const COMPANIES = [
-  { symbol: 'AAPL', name: 'Apple', countryId: 'USA', currency: '$', price: 189.32, pct: 0.8 },
-  { symbol: 'BYDDY', name: 'BYD', countryId: 'CHN', currency: '¥', price: 214.10, pct: -1.2 },
-  { symbol: 'GAZP', name: 'Gazprom', countryId: 'RUS', currency: '₽', price: 142.00, pct: -2.1 },
-  { symbol: 'RELI', name: 'Reliance', countryId: 'IND', currency: '₹', price: 2847.50, pct: 0.4 },
-  { symbol: 'KOMID', name: 'KOMID Corp', countryId: 'DPRK', currency: '₩', price: 88.00, pct: -0.5 },
-  { symbol: '2222', name: 'Aramco', countryId: 'SAU', currency: '﷼', price: 32.40, pct: 1.3 },
-];
+/* COMPANIES imported from agents.js (window.COMPANIES) */
 
 function CompanyPnLStrip({ ticks, activeSpeakerId, countryTints, marketLive }) {
   const items = ticks || COMPANIES;
@@ -167,7 +160,7 @@ function CompanyPnLStrip({ ticks, activeSpeakerId, countryTints, marketLive }) {
           letterSpacing: '1.5px',
           color: isLive ? '#86efac' : '#fcd34d',
         },
-      }, isLive ? 'MARKETS LIVE' : 'MARKETS STATIC'),
+      }, isLive ? 'MARKETS LIVE' : (items.some(t => t && t._demo) ? 'DEMO DATA' : 'MARKETS STATIC')),
     ),
     // The ticker track itself (with extra left padding so the badge doesn't overlap)
     React.createElement('div', { style: { ...trackStyle, paddingLeft: 130 } },

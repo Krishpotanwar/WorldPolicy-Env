@@ -103,7 +103,7 @@ function TrainingFactsCard() {
       background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2) 50%, transparent)', pointerEvents: 'none' } }),
     React.createElement('div', { style: { fontSize: 10, fontWeight: 700, letterSpacing: '2px', color: 'rgba(255,255,255,0.35)',
       borderBottom: '1px solid rgba(255,255,255,0.07)', paddingBottom: 8, marginBottom: 8 } },
-      'MAPPO POLICY — TRAINING PROVENANCE'
+      'MAPPO POLICY — TRAINING PROVENANCE [DEMO]'
     ),
     ...facts.map(([k, v], i) =>
       React.createElement('div', { key: i, style: { display: 'grid', gridTemplateColumns: '120px 1fr', gap: '4px 12px',
@@ -218,7 +218,10 @@ function EvalSummaryCard({ data, episodes, checkpoint }) {
     }),
     // Summary
     React.createElement('div', { style: { marginTop: 8, fontSize: 10, color: 'rgba(255,255,255,0.4)', lineHeight: 1.5 } },
-      'MAPPO outperforms rule-based by +25.1%',
+      (() => { const m = data.find(d => d.name === 'MAPPO'), r = data.find(d => d.name === 'Rule-Based');
+        return m && r && r.mean > 0
+          ? 'MAPPO outperforms rule-based by +' + ((m.mean - r.mean) / r.mean * 100).toFixed(1) + '%'
+          : 'Policy evaluation results'; })(),
       React.createElement('br'),
       'Mean over ' + episodes + ' evaluation episodes, 5 random seeds'
     ),

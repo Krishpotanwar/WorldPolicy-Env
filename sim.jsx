@@ -90,25 +90,27 @@ function useSimulation() {
   stateRef.current = state;
   const timerRef = React.useRef(null);
 
+  /* [DEMO] Scripted scenario for offline/demo mode only. When a live env is
+     running, these events are replaced by real environment state updates. */
   const SCRIPT = [
-    { at: 5, fn: s => ({ ...s, arcs: [{ from: 'RUS', to: 'USA', type: 'SANCTION' }],
-      brief: { brief: 'Rising geopolitical tensions between major powers as Russia imposes economic sanctions on US-aligned trade routes.', priority_response: 'Initiate multilateral diplomatic channels immediately to prevent escalation.', risk_level: 'MEDIUM', crisis_type: 'GEOPOLITICAL TENSION', step: s.step, model: 'llama-3.3-70b' } }) },
+    { at: 5, fn: s => ({ ...s, _demo: true, arcs: [{ from: 'RUS', to: 'USA', type: 'SANCTION' }],
+      brief: { brief: 'Rising geopolitical tensions as sanctions are imposed on trade routes.', priority_response: 'Initiate multilateral diplomatic channels.', risk_level: 'MEDIUM', crisis_type: 'GEOPOLITICAL TENSION', step: s.step, model: 'llama-3.3-70b', _demo: true } }) },
     { at: 15, fn: s => ({ ...s, arcs: [...s.arcs, { from: 'USA', to: 'RUS', type: 'SANCTION' }, { from: 'GBR', to: 'RUS', type: 'SANCTION' }] }) },
     { at: 25, fn: s => ({ ...s, arcs: [...s.arcs, { from: 'CHN', to: 'RUS', type: 'TRADE' }] }) },
     { at: 40, fn: s => ({ ...s, disasterCountry: 'IND',
-      brief: { brief: 'A severe cyclone has made landfall across coastal zones in South Asia, triggering mass displacement and infrastructure collapse.', priority_response: 'Deploy multilateral humanitarian aid immediately with priority to coastal Zone 3 and Zone 7.', risk_level: 'CRITICAL', crisis_type: 'NATURAL DISASTER', step: s.step, model: 'llama-3.3-70b' },
+      brief: { brief: 'Severe cyclone triggers mass displacement and infrastructure collapse.', priority_response: 'Deploy multilateral humanitarian aid immediately.', risk_level: 'CRITICAL', crisis_type: 'NATURAL DISASTER', step: s.step, model: 'llama-3.3-70b', _demo: true },
       arcs: s.arcs.filter(a => a.type !== 'AID') }) },
     { at: 50, fn: s => ({ ...s, arcs: [...s.arcs, { from: 'USA', to: 'IND', type: 'AID' }, { from: 'GBR', to: 'IND', type: 'AID' }] }) },
     { at: 65, fn: s => ({ ...s, arcs: [...s.arcs, { from: 'BRA', to: 'IND', type: 'AID' }] }) },
     { at: 80, fn: s => ({ ...s, coldWar: { detected: true, step: 83, trigger: 'bloc_count=2, cross_bloc_rel=-0.61' } }) },
-    { at: 100, fn: s => ({ ...s, freeRider: { count: 1, names: ['China'], trigger: 'China  climate=0.68, pledge_rate=0.04' } }) },
+    { at: 100, fn: s => ({ ...s, freeRider: { count: 1, names: ['China'], trigger: 'China climate=0.68, pledge_rate=0.04' } }) },
     { at: 120, fn: s => ({ ...s, disasterCountry: null,
-      brief: { brief: 'Cyclone relief operations stabilizing. Two geopolitical blocs have formed with increasing polarization across trade and military dimensions.', priority_response: 'Establish emergency inter-bloc communication protocols to prevent miscalculation.', risk_level: 'HIGH', crisis_type: 'GEOPOLITICAL BIFURCATION', step: s.step, model: 'llama-3.3-70b' } }) },
+      brief: { brief: 'Cyclone relief stabilizing. Geopolitical blocs forming with increasing polarization.', priority_response: 'Establish inter-bloc communication protocols.', risk_level: 'HIGH', crisis_type: 'GEOPOLITICAL BIFURCATION', step: s.step, model: 'llama-3.3-70b', _demo: true } }) },
     { at: 140, fn: s => ({ ...s, armsRace: { detected: true, step: 140, trigger: 'all Δmilitary>0 for 5 consecutive steps' },
       actions: [1, 3, 1, 4, 1, 2] }) },
     { at: 170, fn: s => ({ ...s, armsRace: { ...s.armsRace, detected: false },
       actions: [3, 1, 2, 1, 3, 2],
-      brief: { brief: 'Arms race spiral broken as agents learn militarization is costly. Cooperative policies re-emerging across multiple dimensions.', priority_response: 'Lock in de-escalation gains with binding multilateral agreements.', risk_level: 'MEDIUM', crisis_type: 'DE-ESCALATION', step: s.step, model: 'llama-3.3-70b' } }) },
+      brief: { brief: 'Arms race spiral broken. Cooperative policies re-emerging.', priority_response: 'Lock in de-escalation gains with binding agreements.', risk_level: 'MEDIUM', crisis_type: 'DE-ESCALATION', step: s.step, model: 'llama-3.3-70b', _demo: true } }) },
   ];
 
   const tick = React.useCallback(() => {

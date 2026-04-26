@@ -1,14 +1,5 @@
 /* AgentPortraitStrip — 7 circular portraits with hover/click/active states */
-
-const AGENTS = [
-  { id: 'USA', name: 'United States', code: 'US', tint: '#3b82f6' },
-  { id: 'CHN', name: 'China', code: 'CN', tint: '#ef4444' },
-  { id: 'RUS', name: 'Russia', code: 'RU', tint: '#8b5cf6' },
-  { id: 'IND', name: 'India', code: 'IN', tint: '#f59e0b' },
-  { id: 'DPRK', name: 'North Korea', code: 'KP', tint: '#ef4444' },
-  { id: 'SAU', name: 'Saudi Arabia', code: 'SA', tint: '#22c55e' },
-  { id: 'UNESCO', name: 'UNESCO', code: '🕊', tint: '#14b8a6' },
-];
+/* AGENTS imported from agents.js (window.AGENTS) */
 
 function UNESCOLaurel({ size }) {
   return React.createElement('svg', { width: size, height: size, viewBox: '0 0 48 48', style: { display: 'block' } },
