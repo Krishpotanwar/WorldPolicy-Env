@@ -7,7 +7,7 @@ sdk: docker
 app_port: 7860
 pinned: false
 license: apache-2.0
-short_description: OpenEnv geopolitical RL environment with multi-agent LLM debate
+short_description: OpenEnv geopolitical RL + multi-agent LLM debate
 ---
 
 <div align="center">
