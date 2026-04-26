@@ -56,6 +56,7 @@ def _hf_base_candidates(base_url: str) -> list[str]:
         return []
     # api-inference.huggingface.co does not support /v1/chat/completions; redirect to router.
     if "api-inference.huggingface.co" in raw:
+        print(f"⚠️  API_BASE_URL ({raw}) does not support /v1/chat/completions — redirecting to router.huggingface.co/v1")
         raw = "https://router.huggingface.co/v1"
     candidates = [raw]
     if not raw.rstrip("/").endswith("/v1"):
