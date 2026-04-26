@@ -1,0 +1,38 @@
+[
+  {
+    "task": "task_1",
+    "label": "Natural Disaster (easy)",
+    "crisis_type": "natural_disaster",
+    "heuristic_raw": 4.3218,
+    "heuristic_norm": 0.9695,
+    "trained_raw": 7.1244,
+    "trained_norm": 0.9967,
+    "delta_norm": 0.0272,
+    "delta_pct": 2.7,
+    "steps": 5
+  },
+  {
+    "task": "task_2",
+    "label": "Trade War (medium)",
+    "crisis_type": "trade_war",
+    "heuristic_raw": 4.8963,
+    "heuristic_norm": 0.9204,
+    "trained_raw": 7.9923,
+    "trained_norm": 0.9819,
+    "delta_norm": 0.0615,
+    "delta_pct": 6.2,
+    "steps": 8
+  },
+  {
+    "task": "task_3",
+    "label": "Nuclear Arms Race (hard)",
+    "crisis_type": "arms_race",
+    "heuristic_raw": -4.7218,
+    "heuristic_norm": 0.1314,
+    "trained_raw": 12.6382,
+    "trained_norm": 0.9937,
+    "delta_norm": 0.8623,
+    "delta_pct": 86.2,
+    "steps": 10
+  }
+]
