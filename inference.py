@@ -11,12 +11,14 @@ Stage pipeline (mirrors DisasterMan's pattern judges recognise):
     Stage 3 — Planner Agent (LLM): 2-step lookahead for coalition strategy.
     Stage 4 — Action Agent  (LLM): generate action JSON + hard-constraint validation.
 
-Model defaults: meta-llama/Llama-3.1-8B-Instruct via HF Serverless Inference API.
+Model default: `krishpotanwar/worldpolicy-grpo-3b` (GRPO fine-tune) via HF Serverless
+Inference API — same `MODEL_NAME` / `API_BASE_URL` / `HF_TOKEN` convention as
+`DebateOrchestrator`'s HF fallback.
 All LLM calls go through the OpenAI client (per plan: API_BASE_URL, MODEL_NAME, HF_TOKEN).
 
 Required env vars:
     API_BASE_URL  — default: https://api-inference.huggingface.co/v1
-    MODEL_NAME    — default: meta-llama/Llama-3.1-8B-Instruct
+    MODEL_NAME    — default: krishpotanwar/worldpolicy-grpo-3b
     HF_TOKEN      — required for live LLM stages (Stage 2-4)
     ENV_URL       — default: http://127.0.0.1:7860 (the running WorldPolicy server)
 

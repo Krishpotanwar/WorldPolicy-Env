@@ -7,8 +7,10 @@ Usage:
     async for utterance in orchestrator.run_debate_round(crisis, mappo_action, involvement):
         print(utterance)
 
-Environment variables required:
-    GROQ_API_KEY — your Groq API key
+Environment variables (live debate):
+    GROQ_API_KEY — optional; if set, primary path uses Groq Llama 3.3-70b
+    If GROQ_API_KEY is unset but HF_TOKEN is set, debates use the trained
+    Hugging Face model (OpenAI-compatible API) — see _HF_API_BASE, MODEL_NAME
 """
 
 import asyncio
@@ -782,13 +784,18 @@ class DebateOrchestrator:
                         live_events=live_events,
                         public_sentiment=sentiment,
                     )
-                    tasks[agent_id] = asyncio.create_task(self._call_groq(prompt, agent_id))
+                    if self._use_groq:
+                        tasks[agent_id] = asyncio.create_task(self._call_groq(prompt, agent_id))
+                    else:
+                        tasks[agent_id] = asyncio.create_task(self._call_hf_model(prompt, agent_id))
 
+                timeout = GROQ_TIMEOUT + 2 if self._use_groq else 30.0
                 for agent_id in speaker_order:
                     try:
-                        raw = await asyncio.wait_for(tasks[agent_id], timeout=GROQ_TIMEOUT + 2)
+                        raw = await asyncio.wait_for(tasks[agent_id], timeout=timeout)
                     except Exception as e:
-                        print(f"⚠️  Groq failed for {agent_id} round {round_num}: {e}")
+                        backend = "Groq" if self._use_groq else "HF model"
+                        print(f"⚠️  {backend} failed for {agent_id} round {round_num}: {e}")
                         canned = self._get_canned(crisis_type, [agent_id], round_num)
                         raw = canned[0] if canned else {
                             "text": f"{agent_id} reserves their position.",
