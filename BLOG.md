@@ -229,6 +229,72 @@ The reward curve is in `training_results/reward_curve.png`. The model is at [`kr
 
 ---
 
+## The Feature Nobody Planned (That Became the Most Interesting One)
+
+Somewhere around hour thirty-two, Raj said something that had been bothering all three of us for a while.
+
+*"The canned debates are great. The live Groq debates are great. But we're still choosing the crisis for the user. We're still picking the scenario. What if we just... didn't?"*
+
+The idea sounds obvious in retrospect. It wasn't obvious at 3 AM with eight tabs of FastAPI documentation open.
+
+But we had an hour of runway, the backend was stable, and the frontend already knew how to pass arbitrary strings to the orchestrator. So we built the **Custom Scenario Creator** — and it turned out to be one of those features that reveals something you didn't know you were building toward.
+
+Here's how it works.
+
+The fourth layout mode, called **Case Studies** (press `C` or click the tab), opens a split panel. On the left: three fields. A **Scenario Title** — label for your session. A **Proposed Action** — the diplomatic motion the agents will debate, in the ALLCAPS verb-phrase format the system expects (e.g., `MULTILATERAL_INTERVENTION`, `TECHNOLOGY_EMBARGO`, `JOINT_CUSTODIANSHIP`). And a free-text **Scenario Description** — your prompt. Whatever you write there gets fed verbatim to all seven agents as their world context.
+
+Then you click **▶ SIMULATE CUSTOM DEBATE (MAPPO)**.
+
+The right panel lights up. All seven agents — USA, China, Russia, India, DPRK, Saudi Arabia, and the UN — start speaking. In character. About *your* scenario.
+
+The default scenario we shipped is an alien technology discovery in Antarctica. A crashed UFO with advanced propulsion. Nations deciding whether to share it globally or lock it down.
+
+We tested it ourselves, obviously.
+
+India invoked the Non-Aligned Movement framework and called for international scientific cooperation under UNESCO oversight. The USA immediately proposed a NATO-adjacent research consortium with "partner nations" getting preferential access. Russia pointed out — correctly, within its character model — that the technology's military applications made unilateral control by Western powers unacceptable. North Korea said something about imperialist monopoly on cosmic resources that was so on-brand we had to stop and read it twice.
+
+The UN mediator invoked Article 11.4 of the 1972 World Heritage Convention, citing the crashed craft as a "natural site of outstanding universal value." We did not plan that. The model chose it because it was the closest applicable authority citation in the corpus.
+
+We were not expecting that. None of us were.
+
+### Why This Is More Than a Party Trick
+
+The Custom Scenario Creator is a stress test of the entire architecture. Every other feature in the system was trained or designed for real geopolitical scenarios — real crises, real crisis types, real relationships between real countries. The canned debates are carefully written. The GDELT-fed crises are from this week's news.
+
+Custom scenarios are *none of that*.
+
+When you inject a novel prompt, the agents have to apply their trained reward intuitions, relationship matrices, and persona constraints to information they've never seen. The result is a live A/B test of what the training actually learned — not what we wrote for it.
+
+Some things hold up beautifully:
+- **Persona coherence** — Russia's clipped, adversarial tone doesn't break when the topic changes. It modulates.
+- **Relationship memory** — If India and the USA had prior tension from a debate earlier in the session, that grudge shows up in how they respond to each other in your custom scenario.
+- **Groq priority** — We routed custom scenarios to Groq first, regardless of backend setting, because arbitrary prompts need maximum reasoning quality. The system makes that call silently. If Groq isn't configured, it falls through to the HF model chain.
+- **UN authority scoping** — The mediator will find the closest applicable convention article and cite it. Sometimes the mapping is surprising. Sometimes it's brilliant.
+
+Some things reveal limits:
+- The canned fallback for custom scenarios is explicitly neutral — each agent says "reserves their position on this novel scenario while analyzing incoming data." We flagged that. Canned content can't pretend to engage with a scenario it was never written for.
+- The relationship matrix and grudge memory were seeded on real crisis types. Truly absurdist inputs produce coherent rhetoric but not necessarily coherent *strategy*.
+
+### The Test We Ran That Convinced Us
+
+We tried three custom scenarios during the hackathon, partly as a test and partly because we were sleep-deprived and it was entertaining.
+
+**Scenario 1 — The Arctic thaw:** *"The Arctic Ocean is now fully navigable year-round. Six nations have overlapping territorial claims on newly accessible shipping lanes. Russia controls existing infrastructure. The USA, Canada, and EU want international governance. China has been quietly building dual-use research stations."*
+
+The DPRK agent accused the USA of using climate consequences to extend military reach into Northern waters. Saudi Arabia proposed linking Arctic governance to a new energy compact because, within Saudi Arabia's character model, every crisis resolves to energy. The UN cited the Ramsar Convention on Wetlands — Article 2 — arguing the new lanes passed through formerly protected ecosystems.
+
+We did not program any of this. The agents derived it from their training.
+
+**Scenario 2 — The SWIFT shutdown:** *"A coordinated cyberattack has frozen the SWIFT international banking network for 48 hours. Trade has halted. No perpetrator has been identified. Every nation suspects a different actor."*
+
+China immediately called for a BRICS-led investigation rather than US-led attribution. Russia opposed any framework that would expose the perpetrator to US-defined cyberwarfare doctrine. India abstained from attribution but proposed a multilateral audit mechanism. The USA named a coalition and proposed sanctions against whoever the audit found responsible. Saudi Arabia asked if the reconstruction fund could be denominated in yuan.
+
+**Scenario 3 — The alien tech:** the one we shipped as default, which you already know the ending of.
+
+The point is not that the system is always right. The point is that it's *coherent*. The agents have internalized something real about how their archetypes navigate uncertainty, opposition, and novel information. Custom scenarios are the test that reveals that, because there's no script to fall back on.
+
+---
+
 ## The Demo Has a Heartbeat
 
 We spent the last four hours of the hackathon on the demo flow. Not the backend. Not the reward function. The *experience* of watching it run.
@@ -321,6 +387,8 @@ We didn't ship everything on the list. That was the plan — pick an anchor, ser
 
 But there are a few things we genuinely want to build after the hackathon:
 
+**Custom scenario authoring at scale.** The Custom Scenario Creator lets you inject any freeform crisis, but the canned fallback for those novel scenarios is explicitly neutral. The next step is a scenario-to-persona mapping layer — so even without a live LLM, the agents can respond in character to arbitrary inputs based on trained stance priors rather than "reserves position."
+
 **Grudge memory across episodes.** Right now each episode resets the relationship matrix to a static seed. The real version updates relationships based on who voted against whom and keeps that history across sessions. DPRK's relationship with the USA should degrade over repeated sanctions. That dynamic is in the code structure; it's not surfaced in the frontend yet.
 
 **Tighter task calibration.** The easy and medium tasks need grader weight adjustments so the heuristic baseline stays inside the target reward ranges. That's a two-hour fix with the right benchmarking loop.
@@ -356,6 +424,8 @@ The environment is live. The source is open. The model is on the Hub.
 Click **Run Demo**. Wait for the crisis to escalate. Then hit **Trigger Debate** and watch what happens when seven AI agents with distinct voices, real grudges, and a live humanitarian clock try to agree on anything.
 
 Then hit **Live Debate (Groq)** if you want to see what happens when the script goes away entirely and the world has to improvise.
+
+Then press **`C`** — or click the **Case Studies** tab — and write your own crisis. Anything. An engineered pandemic. A contested wormhole. A stable fusion reactor one nation refuses to share. Feed your description into the box, hit **▶ SIMULATE CUSTOM DEBATE (MAPPO)**, and watch seven archetypes — with their trained reward intuitions, their relationship histories, their grudges, and their authority corpora — try to handle something they've never seen before.
 
 **[→ Browse the source](https://github.com/Krishpotanwar/WorldPolicy-Env)**
 

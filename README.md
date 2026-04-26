@@ -360,6 +360,7 @@ WorldPolicy-Env/
 ├── debate.jsx                   # DebateTranscriptPanel + TypewriterText + UN gold row + CitationExpander + VoteBar
 ├── debate-sim.jsx               # Multi-round SSE debate controller + market poll + debate history
 ├── chamber.jsx                  # Theater-mode layout + RhetoricAlert (no side mediator card)
+├── casestudies.jsx              # Custom Scenario Creator — freeform prompt → live MAPPO debate
 ├── pnl.jsx                      # CountryPnLLedger + CompanyPnLStrip + LIVE/DEMO badge
 ├── panels.jsx                   # Glass panels + EvalSummaryCard (dynamic %) + WorldOutcomeSummaryCard
 ├── sim.jsx                      # V5 simulation engine (cascade events, [DEMO] marked)
@@ -408,7 +409,7 @@ export GROQ_API_KEY="gsk_..."   # https://console.groq.com/keys — primary deba
 # OR (no Groq): train / use your GRPO model on HF Inference
 export HF_TOKEN="hf_..."        # https://huggingface.co/settings/tokens
 export MODEL_NAME="krishpotanwar/worldpolicy-grpo-3b"   # default; override for another endpoint model
-# optional: API_BASE_URL=https://api-inference.huggingface.co/v1
+# optional: API_BASE_URL=https://router.huggingface.co/v1  (this is the default)
 
 python server.py                 # Live Debate button → Groq if set, else HF model if token set, else canned
 python inference.py              # 4-stage policy uses the same HF_TOKEN + MODEL_NAME (see script header)
@@ -481,7 +482,7 @@ The Dockerfile bakes the trained `scorer_weights.pt` into the image at build tim
 |---|---|---|---|
 | `GROQ_API_KEY` | No | — | **Primary** live-debate backend: Groq Llama 3.3-70b. If unset, `DebateOrchestrator` uses the HF path below (when `HF_TOKEN` is set) or **canned** debate lines. |
 | `HF_TOKEN` | No | — | Hugging Face user token. Used by (1) **`inference.py`** LLM stages 2–4, and (2) **`DebateOrchestrator`** when `GROQ_API_KEY` is unset — same OpenAI-compatible Inference API. Without it, `inference.py` auto-degrades to heuristic mode; live debates are canned. |
-| `API_BASE_URL` | No | `https://api-inference.huggingface.co/v1` | OpenAI-compatible base URL for both `inference.py` and the debate HF fallback. |
+| `API_BASE_URL` | No | `https://router.huggingface.co/v1` | OpenAI-compatible base URL for both `inference.py` and the debate HF fallback. `api-inference.huggingface.co` does not support `/v1/chat/completions` and is automatically redirected to the router endpoint. |
 | `MODEL_NAME` | No | `krishpotanwar/worldpolicy-grpo-3b` | Model id for **both** `inference.py` and debate HF path (overridable for other fine-tunes or public instruct models). |
 | `ENV_URL` | No | `http://127.0.0.1:7860` | URL `inference.py` POSTs `/reset` and `/step` to. Set to your HF Space URL for remote runs. |
 | `PORT` | No | `7860` | Server port (HF Spaces convention). |
@@ -490,6 +491,60 @@ The Dockerfile bakes the trained `scorer_weights.pt` into the image at build tim
 | `WP_LIVE_TIMEOUT_S` | No | `3.0` | HTTP timeout for GDELT / World Bank calls. |
 
 **No live data layer (GDELT, WB, yfinance) requires an API key** — they are all on public, no-auth endpoints.
+
+---
+
+## 🧪 Custom Scenario Creator
+
+The **Case Studies** tab (fourth layout mode, keyboard shortcut `C`) lets any user — judge, researcher, or curious builder — inject an entirely custom geopolitical crisis into the live debate system without touching any code.
+
+### How it works
+
+1. **Open Case Studies** — click the "Case Studies" tab in the top layout-mode toggle, or press `C`.
+2. **Fill the three fields:**
+
+   | Field | Purpose | Default |
+   |---|---|---|
+   | **Scenario Title** | Human-readable label for the session | *Alien Tech Discovery* |
+   | **Proposed Action** | The motion the agents debate (ALLCAPS diplomatic verb phrase) | *MULTILATERAL_INTERVENTION* |
+   | **Scenario Description (Prompt)** | Free-text crisis narrative — fed verbatim to every LLM agent as their world context | *A crashed UFO containing advanced propulsion technology has been discovered in Antarctica. Nations are debating whether to share the technology globally or secure it for exclusive use.* |
+
+3. **Click "▶ SIMULATE CUSTOM DEBATE (MAPPO)"** — the button fires `crisisType: 'custom_scenario'` with your `crisisDescription` and `mappoAction` to the SSE `/stream/debate` endpoint.
+4. **Watch the live transcript** — all seven agents respond in real time in the right panel, each in their persona voice, with stance badges (SUPPORT / OPPOSE / MODIFY / MEDIATE) and the standard vote bar.
+
+### What happens under the hood
+
+```
+User submits form
+    ↓
+Frontend fires GET /stream/debate?crisis_type=custom_scenario
+                                  &crisis_description=<your text>
+                                  &mappo_action=<your action>
+    ↓
+DebateOrchestrator receives custom_scenario
+  • Backend preference: Groq (if configured) is always preferred for custom scenarios
+    so arbitrary prompts get maximum reasoning quality
+  • Falls back to HF model (_HF_MODEL / _HF_FALLBACK_MODEL chain)
+  • Final fallback: each agent returns neutral stance —
+    "{agent} reserves their position on this novel scenario while analyzing incoming data."
+    ↓
+7 agents speak, each receiving your description as raw world context
+alongside their persona file, live GDELT events, sentiment scores,
+relationship matrix, and grudge memory — the full pipeline runs on your text
+    ↓
+Vote computed, relationship matrix updated, DebateOutcomeBanner shown
+```
+
+**Key routing detail:** `custom_scenario` triggers `use_groq = True` whenever `GROQ_API_KEY` is configured, regardless of the `WP_DEBATE_BACKEND` setting. This ensures that open-ended, novel prompts always get the best available model rather than the preselected one.
+
+### What you can try
+
+- **Hypotheticals:** *"An engineered pandemic with a known cure has been released. One nation holds the formula and is refusing to share unless sanctions are lifted."*
+- **Near-future scenarios:** *"The Arctic Ocean has become fully navigable year-round. Territorial claims overlap across 6 nations and shipping lanes through formerly Russian waters are contested."*
+- **Economic shocks:** *"A coordinated cyberattack has frozen the SWIFT network for 48 hours. Trade has halted globally. The perpetrator is anonymous."*
+- **Absurdist stress tests:** *"A stable wormhole has opened above Geneva. Every nation wants exclusive transit rights."*
+
+The agents have no knowledge of what's "real" vs. "hypothetical" — they apply their trained personas, reward intuitions, and relationship constraints to whatever you give them. The result is a live A/B test of how geopolitical archetypes respond to novel information.
 
 ---
 
@@ -576,7 +631,7 @@ A direct, no-sugarcoating breakdown for judges and reviewers:
 | **Innovation** | 40% | First geopolitical RL env with **4 simultaneous live data sources** (GDELT crises + WB baselines + yfinance markets + GDELT sentiment). MOGSR 4-layer reward. Globe pulses to the speaking agent. 7 personas with dynamic event/sentiment injection. |
 | **Showing improvement in rewards** | 20% | **Partial.** Baseline (`inference.py --no-llm` heuristic) lands at normalized 0.95–0.98 across 3 tasks. LLM-driven baseline (`inference.py` with `HF_TOKEN`) is the next comparison point. **GRPO training notebook (`train.ipynb`) is the open work item** — see "Roadmap" below. |
 | **Reward design** | (component of 20%) | MOGSR is research-credible: 5 normalized objectives + crisis-adaptive weights + γ·V(s′) + λ·counterfactual + β·robustness + hard penalties. Reward range `[-1, 2]`, episode-normalized to `[0, 1]` via tanh compression. |
-| **Visual polish** | qualitative | Liquid Glass design system. Globe pulses on the speaking country. Real-time tone chip per portrait. LIVE / SCRIPTED LED on the company ticker. Three layout modes (Globe / Split / Theater). |
+| **Visual polish** | qualitative | Liquid Glass design system. Globe pulses on the speaking country. Real-time tone chip per portrait. LIVE / SCRIPTED LED on the company ticker. Four layout modes (Globe / Split / Theater / **Custom Scenario Creator**). |
 | **PyTorch usage** | required | StabilityScorer 6-layer MLP, trained on synthetic batches in 7s on CPU, weights baked into image at build time. Used in env counterfactual layer + inference Stage 1. |
 | **Meta Llama / HF models** | scoring signal | Llama 3.3-70b for live debate when using Groq; **fine-tuned `worldpolicy-grpo-3b`** (or your `MODEL_NAME`) for debate + `inference.py` over HF Serverless when Groq is not used. `train.ipynb` for GRPO training. |
 | **Reward hacking prevention** | required | Action description capped at 500 chars, action_type validated against allowlist (invalid → `-0.1` + episode advance), nuclear escalation terminates immediately, coalition durability check prevents stance-flip exploits. |
