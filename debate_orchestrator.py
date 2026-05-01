@@ -994,61 +994,98 @@ class DebateOrchestrator:
             round_id = f"round_{self._round_counter:04d}"
 
             if use_live:
-                tasks: dict[str, asyncio.Task] = {}
                 prior_context = self._summarize_prior_utterances(all_utterances, round_num)
-                for agent_id in speaker_order:
-                    inv_level = self._get_involvement_level(agent_id, current_involvement)
-                    live_events = get_country_events(agent_id) if _LIVE_EVENTS_OK else []
-                    sentiment = get_country_sentiment(agent_id) if _LIVE_EVENTS_OK else None
-                    prompt = self.loader.build_system_prompt(
-                        agent_id=agent_id,
-                        world_state={**world_state, "step": current_step, "prior_debate": prior_context},
-                        mappo_proposed_action=mappo_action,
-                        crisis_type=crisis_type,
-                        crisis_description=crisis_description,
-                        involvement_level=inv_level,
-                        live_events=live_events,
-                        public_sentiment=sentiment,
-                    )
-                    if self._backend == "groq":
-                        tasks[agent_id] = asyncio.create_task(self._call_groq(prompt, agent_id))
-                    else:
-                        tasks[agent_id] = asyncio.create_task(
-                            self._call_hf_model(
-                                prompt,
-                                agent_id,
-                                crisis_description=crisis_description,
-                                live_events=live_events,
-                                public_sentiment=sentiment,
-                                round_num=round_num,
-                                prior_utterances=all_utterances,
-                            )
+                if self._backend == "groq":
+                    tasks: dict[str, asyncio.Task] = {}
+                    for agent_id in speaker_order:
+                        inv_level = self._get_involvement_level(agent_id, current_involvement)
+                        live_events = get_country_events(agent_id) if _LIVE_EVENTS_OK else []
+                        sentiment = get_country_sentiment(agent_id) if _LIVE_EVENTS_OK else None
+                        prompt = self.loader.build_system_prompt(
+                            agent_id=agent_id,
+                            world_state={**world_state, "step": current_step, "prior_debate": prior_context},
+                            mappo_proposed_action=mappo_action,
+                            crisis_type=crisis_type,
+                            crisis_description=crisis_description,
+                            involvement_level=inv_level,
+                            live_events=live_events,
+                            public_sentiment=sentiment,
                         )
+                        tasks[agent_id] = asyncio.create_task(self._call_groq(prompt, agent_id))
 
-                timeout = GROQ_TIMEOUT + 2 if self._backend == "groq" else 30.0
-                for agent_id in speaker_order:
-                    try:
-                        raw = await asyncio.wait_for(tasks[agent_id], timeout=timeout)
-                    except Exception as e:
-                        backend = "Groq" if self._backend == "groq" else "trained model"
-                        print(f"⚠️  {backend} failed for {agent_id} round {round_num}: {e}")
-                        canned = self._get_canned(crisis_type, [agent_id], round_num)
-                        raw = canned[0] if canned else {
-                            "text": f"{agent_id} reserves their position.",
-                            "stance": "neutral", "mentioned_countries": [], "authority_citation": None,
-                        }
+                    timeout = GROQ_TIMEOUT + 2
+                    for agent_id in speaker_order:
+                        try:
+                            raw = await asyncio.wait_for(tasks[agent_id], timeout=timeout)
+                        except Exception as e:
+                            print(f"⚠️  Groq failed for {agent_id} round {round_num}: {e}")
+                            canned = self._get_canned(crisis_type, [agent_id], round_num)
+                            raw = canned[0] if canned else {
+                                "text": f"{agent_id} reserves their position.",
+                                "stance": "neutral", "mentioned_countries": [], "authority_citation": None,
+                            }
 
-                    utterance = make_utterance(agent_id, raw, current_step, self.AGENTS_CONFIG)
-                    utterance["roundId"] = round_id
-                    utterance["roundNumber"] = round_num
-                    utterance["_live"] = True
-                    round_utterances.append(utterance)
+                        utterance = make_utterance(agent_id, raw, current_step, self.AGENTS_CONFIG)
+                        utterance["roundId"] = round_id
+                        utterance["roundNumber"] = round_num
+                        utterance["_live"] = True
+                        round_utterances.append(utterance)
 
-                    for mentioned in raw.get("mentioned_countries", []):
-                        self.loader.update_relationship(agent_id, mentioned, raw.get("stance", "neutral"))
+                        for mentioned in raw.get("mentioned_countries", []):
+                            self.loader.update_relationship(agent_id, mentioned, raw.get("stance", "neutral"))
 
-                    yield {"_event": "utterance", **utterance}
-                    await asyncio.sleep(1.8)
+                        yield {"_event": "utterance", **utterance}
+                        await asyncio.sleep(1.8)
+                else:
+                    # Keep HF calls sequential so an unsupported primary model trips
+                    # the circuit before the next speaker is generated.
+                    timeout = 30.0
+                    for agent_id in speaker_order:
+                        inv_level = self._get_involvement_level(agent_id, current_involvement)
+                        live_events = get_country_events(agent_id) if _LIVE_EVENTS_OK else []
+                        sentiment = get_country_sentiment(agent_id) if _LIVE_EVENTS_OK else None
+                        prompt = self.loader.build_system_prompt(
+                            agent_id=agent_id,
+                            world_state={**world_state, "step": current_step, "prior_debate": prior_context},
+                            mappo_proposed_action=mappo_action,
+                            crisis_type=crisis_type,
+                            crisis_description=crisis_description,
+                            involvement_level=inv_level,
+                            live_events=live_events,
+                            public_sentiment=sentiment,
+                        )
+                        try:
+                            raw = await asyncio.wait_for(
+                                self._call_hf_model(
+                                    prompt,
+                                    agent_id,
+                                    crisis_description=crisis_description,
+                                    live_events=live_events,
+                                    public_sentiment=sentiment,
+                                    round_num=round_num,
+                                    prior_utterances=all_utterances + round_utterances,
+                                ),
+                                timeout=timeout,
+                            )
+                        except Exception as e:
+                            print(f"⚠️  trained model failed for {agent_id} round {round_num}: {e}")
+                            canned = self._get_canned(crisis_type, [agent_id], round_num)
+                            raw = canned[0] if canned else {
+                                "text": f"{agent_id} reserves their position.",
+                                "stance": "neutral", "mentioned_countries": [], "authority_citation": None,
+                            }
+
+                        utterance = make_utterance(agent_id, raw, current_step, self.AGENTS_CONFIG)
+                        utterance["roundId"] = round_id
+                        utterance["roundNumber"] = round_num
+                        utterance["_live"] = True
+                        round_utterances.append(utterance)
+
+                        for mentioned in raw.get("mentioned_countries", []):
+                            self.loader.update_relationship(agent_id, mentioned, raw.get("stance", "neutral"))
+
+                        yield {"_event": "utterance", **utterance}
+                        await asyncio.sleep(1.8)
             else:
                 canned = self._get_canned(crisis_type, speaker_order, round_num)
                 for raw in canned:
