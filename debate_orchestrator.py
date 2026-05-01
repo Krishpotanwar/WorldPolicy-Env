@@ -27,6 +27,12 @@ from typing import AsyncIterator, Literal
 
 VALID_STANCES = {"support", "oppose", "modify", "neutral", "mediate"}
 MAX_UTTERANCE_TEXT_LEN = 1000
+HF_PRIMARY_PERMANENT_ERROR_MARKERS = (
+    "model_not_supported",
+    "not supported by any provider",
+    "model_not_found",
+    "does not exist",
+)
 
 try:
     from groq import AsyncGroq
@@ -633,10 +639,10 @@ class DebateOrchestrator:
                 except Exception as e:
                     last_err = e
                     print(f"⚠️  HF model call failed for {agent_id} via {base}: {type(e).__name__}: {e}")
-                    if "model_not_supported" in str(e) or "not supported by any provider" in str(e):
+                    if any(marker in str(e) for marker in HF_PRIMARY_PERMANENT_ERROR_MARKERS):
                         self._hf_circuit_open = True
                         self._hf_circuit_opened_at = time.time()
-                        print("🔌 Primary HF model unsupported; trying fallback model for 5min")
+                        print("🔌 Primary HF model unavailable; trying fallback model for 5min")
                         break
                     continue
 

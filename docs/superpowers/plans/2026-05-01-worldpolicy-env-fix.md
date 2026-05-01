@@ -224,10 +224,10 @@ if skip_primary:
 After the `print(f"⚠️  HF model call failed...")` line (614), add circuit breaker trigger:
 
 ```python
-if "model_not_supported" in str(e) or "not supported by any provider" in str(e):
+if any(marker in str(e) for marker in HF_PRIMARY_PERMANENT_ERROR_MARKERS):
     self._hf_circuit_open = True
     self._hf_circuit_opened_at = time.time()
-    print("🔌 Primary HF model unsupported; trying fallback model for 5min")
+    print("🔌 Primary HF model unavailable; trying fallback model for 5min")
     break
 ```
 
