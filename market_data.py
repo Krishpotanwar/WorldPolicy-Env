@@ -11,8 +11,8 @@ Two entry points:
                              (S&P / Hang Seng / Nifty / Tadawul / etc.)
   - get_market_snapshot()  → both above in one call (used by /market-data route).
 
-Plan note Q3: MOEX.ME may be sanctions-blocked. We try ROSN.ME first, then fall
-back to scripted static for Russia. DPRK has no accessible market — null.
+Plan note Q3: Russian market symbols are disabled because yfinance no longer
+has a reliable accessible MOEX/ADR proxy. Russia and DPRK use static fallback.
 """
 
 from __future__ import annotations
@@ -55,8 +55,8 @@ COMPANY_TICKERS: Dict[str, Dict[str, Any]] = {
               "fallback_price": 189.32, "fallback_pct": 0.8},
     "BYDDY": {"yf": "BYDDY",        "name": "BYD",        "countryId": "CHN",  "currency": "$",
               "fallback_price": 214.10, "fallback_pct": -1.2},
-    "GAZP":  {"yf": "GAZP.ME",      "name": "Gazprom",    "countryId": "RUS",  "currency": "₽",
-              "fallback_price": 142.00, "fallback_pct": -2.1},
+    "GAZP":  {"yf": None,            "name": "Gazprom",    "countryId": "RUS",  "currency": "₽",
+              "fallback_price": 142.00, "fallback_pct": -2.1},   # No reliable yfinance MOEX/ADR proxy
     "RELI":  {"yf": "RELIANCE.NS",  "name": "Reliance",   "countryId": "IND",  "currency": "₹",
               "fallback_price": 2847.50, "fallback_pct": 0.4},
     "KOMID": {"yf": None,           "name": "KOMID Corp", "countryId": "DPRK", "currency": "₩",
@@ -69,7 +69,7 @@ COMPANY_TICKERS: Dict[str, Dict[str, Any]] = {
 COUNTRY_INDEX_TICKERS: Dict[str, Optional[str]] = {
     "USA":  "^GSPC",      # S&P 500
     "CHN":  "^HSI",       # Hang Seng Index
-    "RUS":  "ROSN.ME",    # Rosneft (MOEX.ME often sanctions-blocked per plan Q3)
+    "RUS":  None,          # No reliable yfinance MOEX/ADR proxy
     "IND":  "^NSEI",      # Nifty 50
     "DPRK": None,         # No accessible market
     "SAU":  "2222.SR",    # Aramco as Tadawul proxy (^TASI not always available)

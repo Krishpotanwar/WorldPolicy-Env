@@ -11,14 +11,14 @@ Stage pipeline (mirrors DisasterMan's pattern judges recognise):
     Stage 3 — Planner Agent (LLM): 2-step lookahead for coalition strategy.
     Stage 4 — Action Agent  (LLM): generate action JSON + hard-constraint validation.
 
-Model default: `krishpotanwar/worldpolicy-grpo-3b` (GRPO fine-tune) via HF Serverless
+Model default: `krishpotanwar/worldpolicy-grpo-3b-merged` (GRPO fine-tune) via HF Serverless
 Inference API — same `MODEL_NAME` / `API_BASE_URL` / `HF_TOKEN` convention as
 `DebateOrchestrator`'s HF fallback.
 All LLM calls go through the OpenAI client (per plan: API_BASE_URL, MODEL_NAME, HF_TOKEN).
 
 Required env vars:
     API_BASE_URL  — default: https://router.huggingface.co/v1
-    MODEL_NAME    — default: krishpotanwar/worldpolicy-grpo-3b
+    MODEL_NAME    — default: krishpotanwar/worldpolicy-grpo-3b-merged
     HF_TOKEN      — required for live LLM stages (Stage 2-4)
     ENV_URL       — default: http://127.0.0.1:7860 (the running WorldPolicy server)
 
@@ -73,7 +73,7 @@ except Exception:
 # ── Constants ────────────────────────────────────────────────────────────────
 
 API_BASE_URL = os.environ.get("API_BASE_URL", "https://router.huggingface.co/v1")
-MODEL_NAME = os.environ.get("MODEL_NAME", "krishpotanwar/worldpolicy-grpo-3b")
+MODEL_NAME = os.environ.get("MODEL_NAME", "krishpotanwar/worldpolicy-grpo-3b-merged")
 HF_TOKEN = os.environ.get("HF_TOKEN", "")
 ENV_URL = os.environ.get("ENV_URL", "http://127.0.0.1:7860")
 

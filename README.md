@@ -66,21 +66,26 @@ WorldPolicy-Env is a **fully [OpenEnv](https://github.com/meta-pytorch/OpenEnv)-
 
 ## 📈 Training Results
 
-Our zero-shot GRPO reinforcement learning loop successfully improved the 3B agent's performance in navigating the complex multi-objective geopolitical scenario! Here is the reward curve generated from our live training run on Colab:
+We ran a GRPO reinforcement learning loop on `unsloth/Llama-3.2-3B-Instruct` (200 steps) against the live WorldPolicyEnv reward signal. The training curve below shows the action-quality reward over the run:
 
 <div align="center">
   <img src="training_results/reward_curve.png" alt="Training Reward Curve" width="800"/>
 </div>
 
-| Task | Crisis | Heuristic baseline | GRPO-trained | Improvement |
+**Training reward:** Before μ=0.492 → After μ=0.504 (+2.4%). The model shows marginal improvement at 200 steps — longer training runs with more rollouts are needed to push past the 0.7 target threshold.
+
+The table below shows **MOGSR grader scores** on scripted scenario simulations (via `benchmark_reward.py`), comparing a naïve heuristic policy against an optimal-strategy policy. These demonstrate the reward function's dynamic range, not direct model evaluation:
+
+| Task | Crisis | Heuristic baseline | Optimal strategy | Δ |
 |---|---|---|---|---|
 | Task 1 (easy) | Natural disaster | 0.9695 | 0.9967 | +2.7% |
 | Task 2 (medium) | Trade war | 0.9204 | 0.9819 | +6.2% |
 | Task 3 (hard) | Arms race + nuclear trigger | 0.1314 | 0.9937 | **+86.2%** |
 
-> **Task 3 is where the signal is real:** the trained model learned to prioritize
+> **Task 3 shows the reward function's real value:** the optimal strategy prioritises
 > coalition-building before the DPRK nuclear escalation trigger fires at step 4 —
-> a strategy the heuristic never discovered.
+> a strategy the heuristic never discovers. This validates the MOGSR grader's ability
+> to differentiate good policy from bad.
 
 ---
 
@@ -411,7 +416,7 @@ python pytorch_scorer.py
 python server.py
 ```
 
-Open <http://localhost:7860> — the SPA loads with all 4 live data layers active. **Debate LLM path:** if `GROQ_API_KEY` is set, debates use Groq Llama 3.3-70b; if not, but `HF_TOKEN` is set, debates use your **trained** model on Hugging Face Inference (OpenAI-compatible), default `krishpotanwar/worldpolicy-grpo-3b`. If neither is configured, debates fall back to canned utterances. Everything else (GDELT crises, World Bank baselines, yfinance markets, GDELT sentiment) runs live against real APIs without keys.
+Open <http://localhost:7860> — the SPA loads with all 4 live data layers active. **Debate LLM path:** if `GROQ_API_KEY` is set, debates use Groq Llama 3.3-70b; if not, but `HF_TOKEN` is set, debates use your **trained** model on Hugging Face Inference (OpenAI-compatible), default `krishpotanwar/worldpolicy-grpo-3b-merged`. If neither is configured, debates fall back to canned utterances. Everything else (GDELT crises, World Bank baselines, yfinance markets, GDELT sentiment) runs live against real APIs without keys.
 
 ### With Live LLM Debates + Live Inference
 
@@ -420,7 +425,7 @@ export GROQ_API_KEY="gsk_..."   # https://console.groq.com/keys — primary deba
 
 # OR (no Groq): train / use your GRPO model on HF Inference
 export HF_TOKEN="hf_..."        # https://huggingface.co/settings/tokens
-export MODEL_NAME="krishpotanwar/worldpolicy-grpo-3b"   # default; override for another endpoint model
+export MODEL_NAME="krishpotanwar/worldpolicy-grpo-3b-merged"   # default; override for another endpoint model
 # optional: API_BASE_URL=https://router.huggingface.co/v1  (this is the default)
 
 python server.py                 # Live Debate button → Groq if set, else HF model if token set, else canned
@@ -436,7 +441,7 @@ docker build -t worldpolicy .
 docker run -p 7860:7860 \
   -e GROQ_API_KEY="gsk_..." \
   -e HF_TOKEN="hf_..." \
-  -e MODEL_NAME="krishpotanwar/worldpolicy-grpo-3b" \
+  -e MODEL_NAME="krishpotanwar/worldpolicy-grpo-3b-merged" \
   worldpolicy
 ```
 
@@ -495,7 +500,8 @@ The Dockerfile bakes the trained `scorer_weights.pt` into the image at build tim
 | `GROQ_API_KEY` | No | — | **Primary** live-debate backend: Groq Llama 3.3-70b. If unset, `DebateOrchestrator` uses the HF path below (when `HF_TOKEN` is set) or **canned** debate lines. |
 | `HF_TOKEN` | No | — | Hugging Face user token. Used by (1) **`inference.py`** LLM stages 2–4, and (2) **`DebateOrchestrator`** when `GROQ_API_KEY` is unset — same OpenAI-compatible Inference API. Without it, `inference.py` auto-degrades to heuristic mode; live debates are canned. |
 | `API_BASE_URL` | No | `https://router.huggingface.co/v1` | OpenAI-compatible base URL for both `inference.py` and the debate HF fallback. `api-inference.huggingface.co` does not support `/v1/chat/completions` and is automatically redirected to the router endpoint. |
-| `MODEL_NAME` | No | `krishpotanwar/worldpolicy-grpo-3b` | Model id for **both** `inference.py` and debate HF path (overridable for other fine-tunes or public instruct models). |
+| `MODEL_NAME` | No | `krishpotanwar/worldpolicy-grpo-3b-merged` | Model id for **both** `inference.py` and debate HF path (overridable for other fine-tunes or public instruct models). |
+| `MODEL_NAME_FALLBACK` | No | `meta-llama/Llama-3.1-8B-Instruct` | Debate-only fallback when the primary HF model is unsupported by the selected Inference provider. |
 | `ENV_URL` | No | `http://127.0.0.1:7860` | URL `inference.py` POSTs `/reset` and `/step` to. Set to your HF Space URL for remote runs. |
 | `PORT` | No | `7860` | Server port (HF Spaces convention). |
 | `WP_CORS_ORIGINS` | No | `*` | Comma-separated allowed CORS origins. |
@@ -631,7 +637,7 @@ A direct, no-sugarcoating breakdown for judges and reviewers:
 | Scenario header | Static "South Asia Cyclone + Geopolitical Crisis" | Driven from `debate.crisisType` or `sim.brief.crisis_type` |
 | Eval "+25.1%" claim | Hardcoded string | Computed: `((mappo.mean - ruleBased.mean) / ruleBased.mean * 100).toFixed(1)` |
 
-**Bottom line:** the OpenEnv RL contract and the data layers are real. Demo/canned content is explicitly flagged with `[DEMO]` labels and `_demo: true` fields. The LLM debate is **not** canned if **`GROQ_API_KEY` is set** (Groq) **or** **`HF_TOKEN` is set** with a working `MODEL_NAME` on the HF Inference API (trained GRPO default: `krishpotanwar/worldpolicy-grpo-3b`).
+**Bottom line:** the OpenEnv RL contract and the data layers are real. Demo/canned content is explicitly flagged with `[DEMO]` labels and `_demo: true` fields. The LLM debate is **not** canned if **`GROQ_API_KEY` is set** (Groq) **or** **`HF_TOKEN` is set** with a working `MODEL_NAME` on the HF Inference API (trained GRPO default: `krishpotanwar/worldpolicy-grpo-3b-merged`).
 
 ---
 
@@ -714,7 +720,7 @@ When a crisis fires, the system auto-selects relevant convention articles for th
 | **RL framework** | OpenEnv (`openenv-core>=0.2.2`) — Action / Observation / State / Environment / EnvClient + WebSocket transport + create_app FastAPI factory |
 | **PyTorch** | `torch>=2.4` for StabilityScorer MLP |
 | **Backend** | FastAPI (`>=0.115`) + Uvicorn (`>=0.32`) — async SSE + WebSocket |
-| **LLM (debate)** | **Primary:** Groq AsyncGroq → `llama-3.3-70b-versatile` · **Fallback:** OpenAI client → HuggingFace Serverless → `MODEL_NAME` (default `krishpotanwar/worldpolicy-grpo-3b`) when `GROQ_API_KEY` is unset |
+| **LLM (debate)** | **Primary:** Groq AsyncGroq → `llama-3.3-70b-versatile` · **Fallback:** OpenAI client → HuggingFace Serverless → `MODEL_NAME` (default `krishpotanwar/worldpolicy-grpo-3b-merged`) when `GROQ_API_KEY` is unset |
 | **LLM (inference)** | OpenAI client → HuggingFace Serverless → `MODEL_NAME` (same default as debate HF path) |
 | **Live data** | `requests` (GDELT + World Bank) + `yfinance` (markets) |
 | **Frontend** | React 18 UMD + Babel standalone — zero build step |

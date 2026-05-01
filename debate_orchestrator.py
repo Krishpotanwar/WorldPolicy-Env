@@ -43,7 +43,7 @@ except ImportError:
 
 # HF OpenAI-compatible routing endpoint.
 _HF_API_BASE = os.environ.get("API_BASE_URL", "https://router.huggingface.co/v1")
-_HF_MODEL    = os.environ.get("MODEL_NAME", "krishpotanwar/worldpolicy-grpo-3b")
+_HF_MODEL    = os.environ.get("MODEL_NAME", "krishpotanwar/worldpolicy-grpo-3b-merged")
 _HF_FALLBACK_MODEL = os.environ.get("MODEL_NAME_FALLBACK", "meta-llama/Llama-3.1-8B-Instruct")
 _HF_TOKEN    = os.environ.get("HF_TOKEN", "")
 _BACKEND_MODE = os.environ.get("WP_DEBATE_BACKEND", "mappo").strip().lower()
@@ -488,6 +488,8 @@ class DebateOrchestrator:
         self.loader = PersonaLoader()
         self._round_counter = 0
         self._last_debate_step = -DEBATE_RATE_LIMIT_STEPS  # allow first debate immediately
+        self._hf_circuit_open = False
+        self._hf_circuit_opened_at: float = 0.0
 
         # Optional backends: Groq + trained model (HF OpenAI-compatible endpoint)
         api_key = os.environ.get("GROQ_API_KEY", "")
@@ -507,11 +509,18 @@ class DebateOrchestrator:
             self._backend = "mappo" if self._hf_clients else "none"
 
         self._use_live = self._backend in {"mappo", "groq"}
+        hf_status = "none"
+        if self._hf_clients:
+            hf_status = f"configured ({_HF_MODEL})"
+        groq_status = "ready" if self._groq_client else "not configured"
+
         print(
-            "DebateOrchestrator initialized. "
+            f"DebateOrchestrator initialized. "
             f"backend={self._backend} mode={mode} "
-            f"hf_model={bool(self._hf_clients)} groq={bool(self._groq_client)}"
+            f"hf_model={hf_status} groq={groq_status}"
         )
+        if self._backend == "none":
+            print("⚠️  No live debate backend available. Debates will use canned responses.")
 
     def can_run_debate(self, current_step: int) -> bool:
         """Rate limit: max 1 debate per DEBATE_RATE_LIMIT_STEPS simulation steps."""
@@ -574,6 +583,14 @@ class DebateOrchestrator:
             else: mapped.append(c[:10])
         return list(dict.fromkeys(mapped))[:10]
 
+    def _hf_circuit_tripped(self) -> bool:
+        if not self._hf_circuit_open:
+            return False
+        if time.time() - self._hf_circuit_opened_at > 300:
+            self._hf_circuit_open = False
+            return False
+        return True
+
     async def _call_hf_model(
         self,
         system_prompt: str,
@@ -597,22 +614,31 @@ class DebateOrchestrator:
         )
         raw_text = ""
         used_model = _HF_MODEL
-        last_err = None
-        for base, client in self._hf_clients:
-            try:
-                resp = await client.chat.completions.create(
-                    model=_HF_MODEL,
-                    messages=[{"role": "user", "content": prompt}],
-                    max_tokens=200,
-                    temperature=0.7,
-                )
-                raw_text = (resp.choices[0].message.content or "").strip()
-                if raw_text:
-                    break
-            except Exception as e:
-                last_err = e
-                print(f"⚠️  HF model call failed for {agent_id} via {base}: {type(e).__name__}: {e}")
-                continue
+        last_err: Exception | None = None
+        skip_primary = self._hf_circuit_tripped()
+        if skip_primary:
+            last_err = RuntimeError("HF primary circuit breaker open")
+        else:
+            for base, client in self._hf_clients:
+                try:
+                    resp = await client.chat.completions.create(
+                        model=_HF_MODEL,
+                        messages=[{"role": "user", "content": prompt}],
+                        max_tokens=200,
+                        temperature=0.7,
+                    )
+                    raw_text = (resp.choices[0].message.content or "").strip()
+                    if raw_text:
+                        break
+                except Exception as e:
+                    last_err = e
+                    print(f"⚠️  HF model call failed for {agent_id} via {base}: {type(e).__name__}: {e}")
+                    if "model_not_supported" in str(e) or "not supported by any provider" in str(e):
+                        self._hf_circuit_open = True
+                        self._hf_circuit_opened_at = time.time()
+                        print("🔌 Primary HF model unsupported; trying fallback model for 5min")
+                        break
+                    continue
 
         # Auto-fallback when primary fine-tuned model fails (unsupported by provider or wrong endpoint).
         if not raw_text and last_err is not None:
