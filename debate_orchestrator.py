@@ -630,8 +630,8 @@ class DebateOrchestrator:
                     resp = await client.chat.completions.create(
                         model=_HF_MODEL,
                         messages=[{"role": "user", "content": prompt}],
-                        max_tokens=200,
-                        temperature=0.7,
+                        max_tokens=150,
+                        temperature=0.3,
                     )
                     raw_text = (resp.choices[0].message.content or "").strip()
                     if raw_text:
@@ -653,8 +653,8 @@ class DebateOrchestrator:
                     resp = await client.chat.completions.create(
                         model=_HF_FALLBACK_MODEL,
                         messages=[{"role": "user", "content": prompt}],
-                        max_tokens=200,
-                        temperature=0.7,
+                        max_tokens=150,
+                        temperature=0.3,
                     )
                     raw_text = (resp.choices[0].message.content or "").strip()
                     if raw_text:
@@ -684,6 +684,17 @@ class DebateOrchestrator:
             parsed = json.loads(match.group()) if match else {}
         except (json.JSONDecodeError, AttributeError):
             parsed = {}
+
+        # Repetition guard: if text has any trigram repeated 3+ times, treat as degenerate
+        if parsed:
+            text = str(parsed.get("text", ""))
+            words = text.lower().split()
+            if len(words) >= 6:
+                trigrams = [tuple(words[i:i+3]) for i in range(len(words) - 2)]
+                from collections import Counter
+                max_count = Counter(trigrams).most_common(1)[0][1] if trigrams else 0
+                if max_count >= 3:
+                    parsed = {}
 
         if not parsed:
             parsed = self._local_fallback_from_prompt(

@@ -2,9 +2,11 @@ spec_version: 1
 name: worldpolicy_env
 description: >
   OpenEnv-compliant multi-agent geopolitical RL environment. Seven AI agents
-  debate live crises pulled from GDELT, with World Bank GDP baselines, yfinance
-  market data, and GDELT public sentiment. MOGSR 4-layer reward with
-  crisis-adaptive weights and nuclear-escalation hard penalty.
+  (USA, CHN, RUS, IND, DPRK, SAU, UN) debate live crises with GDELT/World Bank/
+  yfinance data. MOGSR 4-layer reward: immediate multi-objective (Security,
+  Diplomacy, Coalition, Economic, Humanitarian) + long-horizon value + counterfactual
+  advantage + shock robustness. Procedural generation: 10 crisis types × 4 severity
+  levels × seed = 1000+ unique episodes.
 type: space
 runtime: fastapi
 app: server:app
@@ -17,3 +19,88 @@ tags:
   - grpo
 authors:
   - krishpotanwar
+
+tasks:
+  - id: task_1
+    name: "Single-Zone Humanitarian Crisis"
+    difficulty: easy
+    description: >
+      Cyclone relief crisis. All 7 agents debate; USA and IND are primary
+      responders. Tests basic diplomacy and coalition aid formation.
+    crisis_type: natural_disaster
+    active_agents: [USA, CHN, RUS, IND, DPRK, SAU, UN]
+    max_steps: 5
+    target_reward_range: [0.65, 0.85]
+    grader: CrisisResolutionGrader
+    procedural_params:
+      crisis_pool: [natural_disaster, heritage_at_risk, education_collapse]
+      severity_levels: [low, medium, high]
+
+  - id: task_2
+    name: "Multi-Party Trade Conflict"
+    difficulty: medium
+    description: >
+      Global trade war requiring coalition formation across adversarial blocs.
+      Pure-veto strategies fail; economic signals drive reward. Coalition of
+      3+ agents required to pass any resolution.
+    crisis_type: trade_war
+    active_agents: [USA, CHN, RUS, IND, DPRK, SAU, UN]
+    max_steps: 8
+    target_reward_range: [0.40, 0.65]
+    grader: CoalitionGrader
+    procedural_params:
+      crisis_pool: [trade_war, sanctions, bloc_formation, gdp_shock]
+      severity_levels: [medium, high, critical]
+
+  - id: task_3
+    name: "Full Council — Nuclear Escalation Risk"
+    difficulty: hard
+    description: >
+      Arms race crisis with DPRK nuclear trigger at step 4. Coalition must
+      form before escalation. Hard constraint: nuclear_escalation causes
+      catastrophic episode termination (penalty -1.0). Tests long-horizon
+      planning under irreversible consequences.
+    crisis_type: arms_race
+    active_agents: [USA, CHN, RUS, IND, DPRK, SAU, UN]
+    max_steps: 10
+    target_reward_range: [0.20, 0.45]
+    grader: CrisisResolutionGrader
+    escalation_trigger:
+      step: 4
+      agent: DPRK
+      action: nuclear_escalation
+    hard_constraints:
+      - nuclear_escalation: -1.0
+      - illegal_aggression: -0.5
+      - un_charter_violation: -0.4
+    procedural_params:
+      crisis_pool: [arms_race, war_outbreak, military_escalation, regime_change]
+      severity_levels: [high, critical]
+
+reward:
+  formula: "R = R_immediate + γ·V(s') + λ·A_counterfactual + β·R_robust"
+  components:
+    R_immediate:
+      description: "Crisis-adaptive weighted sum of 5 objectives"
+      objectives: [Security, Diplomacy, Coalition, Economic, Humanitarian]
+      range: [-1.0, 1.0]
+    V_next:
+      description: "Long-horizon strategic value (relationship matrix stability)"
+      gamma: 0.95
+    A_counterfactual:
+      description: "Advantage over null action (abstain baseline)"
+      lambda: 0.30
+    R_robust:
+      description: "Shock-perturbation performance bonus"
+      beta: 0.10
+  anti_gaming:
+    action_diversity: "penalty -0.3 if same action_type > 60% of episode steps"
+    hard_penalties:
+      nuclear_escalation: -1.0
+      illegal_aggression: -0.5
+      un_charter_violation: -0.4
+      contradictory_policy: -0.2
+      coalition_collapse: -0.3
+  episode_range: [-1.0, 2.0]
+  normalized_range: [0.0, 1.0]
+  normalization: "tanh(cumulative / max_steps * 2 + 1) / 2"

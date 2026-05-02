@@ -261,13 +261,23 @@ def normalize_episode_reward(cumulative: float, max_steps: int) -> float:
 
 def grade_episode(rounds: List[Dict[str, Any]], task: str = "task_1") -> Dict[str, Any]:
     """Score a finished episode across all rounds. Used by /grader endpoint."""
+    from collections import Counter
     cls = TASK_GRADERS.get(task, CrisisResolutionGrader)
     grader = cls()
     if not rounds:
         return {"task": task, "raw_score": 0.0, "normalized": 0.5, "step_count": 0}
     raw = sum(grader.score(r, crisis_type=r.get("crisis_type", "DEFAULT")) for r in rounds)
     avg = raw / len(rounds)
-    # Reuse the normalization formula on the per-step average
+
+    # Anti-gaming: penalize if same action_type used in > 60% of steps
+    action_types = [r.get("action_type", "") for r in rounds if r.get("action_type")]
+    diversity_penalty = 0.0
+    if len(action_types) >= 3:
+        most_common_count = Counter(action_types).most_common(1)[0][1]
+        if most_common_count / len(action_types) > 0.6:
+            diversity_penalty = -0.3
+            raw += diversity_penalty
+
     normalized = normalize_episode_reward(raw, max(len(rounds), 1))
     return {
         "task": task,
@@ -275,4 +285,5 @@ def grade_episode(rounds: List[Dict[str, Any]], task: str = "task_1") -> Dict[st
         "avg_per_round": round(avg, 4),
         "normalized": round(normalized, 4),
         "step_count": len(rounds),
+        "diversity_penalty": round(diversity_penalty, 4),
     }

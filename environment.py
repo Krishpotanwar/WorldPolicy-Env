@@ -106,23 +106,53 @@ class WorldPolicyEnvironment(Environment):
 
     # ── reset ────────────────────────────────────────────────────────────────
 
+    # Crisis pool for procedural generation (seed-driven variety)
+    _CRISIS_POOL = [
+        "natural_disaster", "trade_war", "arms_race", "military_escalation",
+        "war_outbreak", "cultural_destruction", "sanctions", "bloc_formation",
+        "regime_change", "heritage_at_risk",
+    ]
+    # Severity levels affect initial relationship matrix warmth
+    _SEVERITY_REL_BIAS = {
+        "low": 0.15, "medium": 0.0, "high": -0.15, "critical": -0.30,
+    }
+
     def reset(
         self,
         seed: Optional[int] = None,
         episode_id: Optional[str] = None,
         task: str = DEFAULT_TASK,
+        crisis_type: Optional[str] = None,
+        severity: Optional[str] = None,
         **kwargs: Any,
     ) -> WorldPolicyObservation:
         """Start a new episode.
 
         Args:
-            seed: ignored for now (env is LLM-driven; reproducibility comes from
-                  pinned canned debates when GROQ_API_KEY is unset).
+            seed: integer seed for procedural episode generation. Same seed +
+                  task → same crisis_type and severity → reproducible episodes.
             episode_id: optional caller-supplied ID; UUID minted otherwise.
-            task: one of task_1 / task_2 / task_3 (or unknown → defaults to task_1).
+            task: one of task_1 / task_2 / task_3.
+            crisis_type: override crisis type (ignores seed if set).
+            severity: one of low / medium / high / critical — biases relationship
+                      matrix and civilian harm signals.
         """
         task_cfg = get_task(task)
-        crisis_type = task_cfg["crisis_type"]
+
+        # Procedural generation: seed selects crisis type + severity
+        if crisis_type is None:
+            if seed is not None:
+                crisis_type = self._CRISIS_POOL[seed % len(self._CRISIS_POOL)]
+            else:
+                crisis_type = task_cfg["crisis_type"]
+
+        if severity is None:
+            severities = ["low", "medium", "high", "critical"]
+            if seed is not None:
+                severity = severities[(seed // len(self._CRISIS_POOL)) % len(severities)]
+            else:
+                severity = "medium"
+
         crisis = get_live_crisis(crisis_type)
 
         # Per-country P&L baselines — World Bank (with fallback).
@@ -135,10 +165,17 @@ class WorldPolicyEnvironment(Environment):
         # Relationship matrix snapshot — persistent across sessions, mutated by step()
         rel_matrix = {a: dict(self._loader.get_relationship_row(a)) for a in self._loader._relationships}
         if not rel_matrix:
-            # No matrix loaded — seed neutral
             rel_matrix = {
                 a: {b: 0.0 for b in AGENT_IDS_NON_UN + ["UN"] if b != a}
                 for a in AGENT_IDS_NON_UN + ["UN"]
+            }
+
+        # Apply severity bias: high severity = colder relationships = harder episode
+        rel_bias = self._SEVERITY_REL_BIAS.get(severity, 0.0)
+        if rel_bias != 0.0:
+            rel_matrix = {
+                a: {b: max(-1.0, min(1.0, v + rel_bias)) for b, v in row.items()}
+                for a, row in rel_matrix.items()
             }
 
         # Initial stability via PyTorch scorer
@@ -149,6 +186,7 @@ class WorldPolicyEnvironment(Environment):
             "task": task,
             "task_cfg": task_cfg,
             "crisis_type": crisis_type,
+            "severity": severity,
             "crisis": crisis,
             "country_pnl": country_pnl,
             "relationship_matrix": rel_matrix,
@@ -420,15 +458,32 @@ class WorldPolicyEnvironment(Environment):
             "next_relationship_matrix": rel_after,
             "current_stability": current_stability,
             "crisis_resolved": vote_passed and not violations,
-            # Extra signals for the grader's per-objective scorers
+            # ── Grader signals wired from actual state ──────────────────────
+            # conflict_delta: positive = stability dropped = more conflict
+            "conflict_delta": float(self._task_state["prev_stability"] - current_stability),
             "negotiation_steps": self._state.step_count + 1,
             "max_negotiation_steps": self._state.max_steps,
-            "law_compliance_score": 0.9 if any(u.get("isAuthoritative") for u in utterances) else 0.5,
-            "civilian_harm_index": 0.05 if vote_passed else 0.25,
-            "gdp_growth_rate": 0.01 if vote_passed else -0.01,
-            "pr_ceasefire": 0.7 if vote_passed and crisis_type in {"arms_race", "war_outbreak"} else 0.3,
-            "pr_escalation": 0.6 if violations else 0.1,
-            "spillover_risk": 0.5 if violations else 0.1,
+            # law_compliance: authoritative UN citation = higher compliance
+            "law_compliance_score": (
+                0.95 if any(u.get("isAuthoritative") for u in utterances) else
+                0.7 if vote_passed else 0.4
+            ),
+            # civilian_harm: crisis type + violations drive severity
+            "civilian_harm_index": self._compute_civilian_harm(crisis_type, vote_passed, violations),
+            # refugee risk: war/arms crises displace people; resolved crises reduce risk
+            "refugee_displacement_risk": self._compute_refugee_risk(crisis_type, vote_passed, violations),
+            # economic signals from actual PnL deltas
+            "gdp_growth_rate": self._compute_gdp_delta(pnl_after),
+            "inflation_shock": max(0.0, self._compute_gdp_delta(pnl_after) * -0.5),
+            # trade disruption: sanctions cause disruption, coalition reduces it
+            "trade_disruption": 0.4 if action.action_type == "sanction" else (0.05 if coalition_members else 0.2),
+            "sanctions_cost": 0.25 if action.action_type == "sanction" else 0.0,
+            # escalation signals from stability change + violations
+            "pr_ceasefire": 0.75 if vote_passed and crisis_type in {"arms_race", "war_outbreak", "military_escalation"} else 0.25,
+            "pr_escalation": min(1.0, 0.5 + len(violations) * 0.2 + max(0.0, self._task_state["prev_stability"] - current_stability)),
+            "spillover_risk": 0.6 if violations else (0.15 if vote_passed else 0.35),
+            # anti-gaming tracking
+            "action_type": action.action_type,
         }
 
     def _synthesize_null_round(self, null_action: WorldPolicyAction) -> Dict[str, Any]:
@@ -503,6 +558,44 @@ class WorldPolicyEnvironment(Environment):
                 t = rels.get(a, {}).get(b, rels.get(b, {}).get(a, 0.0))
                 pairs.append((t + 1.0) / 2.0)
         return sum(pairs) / max(len(pairs), 1)
+
+    # Civilian harm by crisis type (base rates)
+    _CIVILIAN_HARM_BASE = {
+        "war_outbreak": 0.70, "military_escalation": 0.55, "arms_race": 0.30,
+        "natural_disaster": 0.50, "trade_war": 0.10, "sanctions": 0.20,
+        "cultural_destruction": 0.40, "heritage_at_risk": 0.25,
+        "bloc_formation": 0.05, "regime_change": 0.45,
+    }
+    _REFUGEE_RISK_BASE = {
+        "war_outbreak": 0.80, "military_escalation": 0.60, "arms_race": 0.25,
+        "natural_disaster": 0.55, "trade_war": 0.05, "sanctions": 0.15,
+        "cultural_destruction": 0.35, "heritage_at_risk": 0.20,
+        "bloc_formation": 0.03, "regime_change": 0.50,
+    }
+
+    def _compute_civilian_harm(self, crisis_type: str, vote_passed: bool, violations: list) -> float:
+        base = self._CIVILIAN_HARM_BASE.get(crisis_type, 0.25)
+        if vote_passed:
+            base *= 0.35
+        base += len(violations) * 0.10
+        return max(0.0, min(1.0, base))
+
+    def _compute_refugee_risk(self, crisis_type: str, vote_passed: bool, violations: list) -> float:
+        base = self._REFUGEE_RISK_BASE.get(crisis_type, 0.20)
+        if vote_passed:
+            base *= 0.30
+        base += len(violations) * 0.12
+        return max(0.0, min(1.0, base))
+
+    def _compute_gdp_delta(self, pnl_after: Dict[str, Dict[str, float]]) -> float:
+        prev_pnl = self._task_state["country_pnl"]
+        deltas = []
+        for aid in AGENT_IDS_NON_UN:
+            prev_gdp = prev_pnl.get(aid, {}).get("gdp", 1e12)
+            curr_gdp = pnl_after.get(aid, {}).get("gdp", prev_gdp)
+            if prev_gdp > 0:
+                deltas.append((curr_gdp - prev_gdp) / prev_gdp)
+        return sum(deltas) / max(len(deltas), 1) if deltas else 0.0
 
     def _apply_pnl_deltas(
         self,
