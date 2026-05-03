@@ -120,7 +120,7 @@ Reward logs from the run:
 | Runtime | 4,942 seconds |
 | Train steps/sec | 0.121 |
 
-![GRPO reward curve](https://raw.githubusercontent.com/Krishpotanwar/WorldPolicy-Env/main/training_results/reward_curve_v3.png)
+![GRPO reward curve](training_results/reward_curve_v3.png)
 
 Important caveat: the scalar reward curve did not catch a generation-quality
 failure. The post-training qualitative evaluation generated repeated text and
