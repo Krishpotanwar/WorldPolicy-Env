@@ -103,6 +103,7 @@ path:
 
 - Base model: `unsloth/Llama-3.2-3B-Instruct`
 - Method: SFT warm-up + GRPO
+- Job: `krishpotanwar/69f756149d85bec4d76f149d`
 - SFT samples: 552
 - SFT steps: 400
 - GRPO steps: 600
@@ -114,13 +115,16 @@ Reward logs from the run:
 
 | Metric | Value |
 |---|---:|
-| First logged reward | 0.8236 |
-| Final logged reward | 0.8329 |
-| Max logged reward | 0.8526 |
-| Runtime | 4,942 seconds |
-| Train steps/sec | 0.121 |
+| First logged reward | 0.5621 |
+| Final logged reward | 0.6471 |
+| Max logged reward | 0.7533 |
+| First 20% mean | 0.539 |
+| Last 20% mean | 0.602 |
+| Mean improvement | +0.063 |
+| Runtime | 5,094 seconds |
+| Train steps/sec | 0.118 |
 
-![GRPO reward curve](training_results/reward_curve_v3.png)
+![GRPO reward curve](training_results/reward_curve_v4.png)
 
 Important caveat: the scalar reward curve did not catch a generation-quality
 failure. The post-training qualitative evaluation generated repeated text and
