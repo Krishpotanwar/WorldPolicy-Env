@@ -10,8 +10,8 @@ Each task defines:
   per plan to prevent "success probability = 0" failure mode in GRPO)
 - escalation_trigger (optional: hard event injected mid-episode for stress tests)
 
-The 3-task gradient (easy → medium → hard) is the same shape as DisasterMan's
-submission — judges recognise this rubric.
+The 3-task gradient (easy → medium → hard) gives training and evaluation a
+simple progression from humanitarian coordination to escalation management.
 """
 
 from __future__ import annotations

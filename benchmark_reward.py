@@ -302,7 +302,7 @@ def print_table(results: List[Dict[str, Any]]) -> None:
     print(f"\n{bar}")
     print("  WorldPolicy-Env V6.1 — Reward Benchmark: Heuristic Baseline vs GRPO-Trained Model")
     print(f"  Grader: MOGSR 4-layer (Security·Diplomacy·Coalition·Economic·Humanitarian)")
-    print(f"  Normalisation: DisasterMan tanh formula  │  All scores ∈ [0, 1]")
+    print(f"  Normalisation: tanh compression  │  All scores ∈ [0, 1]")
     print(bar)
     print(f"  {'Task':<32}  {'Heuristic':>10}  {'Trained':>10}  {'Δ':>8}  {'Δ%':>6}")
     print(f"  {'':─<32}  {'─'*10}  {'─'*10}  {'─'*8}  {'─'*6}")

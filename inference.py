@@ -1,11 +1,10 @@
 """
 inference.py — WorldPolicy-Env V6.1 4-stage baseline policy.
 
-Required by the hackathon: a deterministic baseline that hits the env over the
-OpenEnv contract, runs all 3 tasks, and emits structured [START]/[STEP]/[END]
-logs the validator can parse.
+Deterministic baseline policy that hits the env over the OpenEnv contract, runs
+all 3 tasks, and emits structured [START]/[STEP]/[END] logs.
 
-Stage pipeline (mirrors DisasterMan's pattern judges recognise):
+Stage pipeline:
     Stage 1 — PyTorch StabilityScorer: sub-millisecond risk analysis.
     Stage 2 — Triage Agent (LLM): assess crisis severity + agent priority.
     Stage 3 — Planner Agent (LLM): 2-step lookahead for coalition strategy.
@@ -302,7 +301,7 @@ def run_episode(task: str) -> Dict[str, Any]:
         last_round = obs.get("last_round_summary") or {}
         rounds.append(last_round)
 
-        # Compact step log — judges' validator parses this line shape
+        # Compact step log for downstream parsers.
         print(f'[STEP] {json.dumps({"step": step_num, "agent": agent_id, "action": action["action_type"], "target": action.get("target"), "reward": round(reward, 4), "done": done, "vote_passed": last_round.get("vote_passed"), "coalition": last_round.get("coalition_members", []), "stability": round(float(obs.get("stability_score", 0.5)), 3)})}')
 
     # Grade the episode

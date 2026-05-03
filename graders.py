@@ -16,8 +16,8 @@ Usage:
     grader = CrisisResolutionGrader()
     raw_score = grader.score(round_result, crisis_type="natural_disaster")  # in [-1, 2]
 
-The environment's step() also normalizes the cumulative episode reward to [0, 1] for
-the /grader endpoint via the DisasterMan formula:
+The environment's step() also normalizes the cumulative episode reward to [0, 1]
+for the /grader endpoint via tanh compression:
     normalized = (tanh(cumul_reward / max_steps * 2) + 1) / 2
 """
 
@@ -253,7 +253,7 @@ TASK_GRADERS: Dict[str, type[MOGSRGrader]] = {
 
 
 def normalize_episode_reward(cumulative: float, max_steps: int) -> float:
-    """DisasterMan compression formula → [0, 1]."""
+    """Compress cumulative reward to [0, 1] with a tanh curve."""
     if max_steps <= 0:
         return 0.5
     return (math.tanh(cumulative / max_steps * 2.0) + 1.0) / 2.0

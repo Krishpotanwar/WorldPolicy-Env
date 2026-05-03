@@ -243,9 +243,9 @@ function ArchitectureDiagramPanel() {
     { x: 160, y: 110, w: 170, h: 36, label: 'MAPPO PyTorch', color: '#8b5cf6' },
     { x: 430, y: 80, w: 140, h: 36, label: 'World State', color: '#22c55e' },
     { x: 660, y: 80, w: 140, h: 36, label: 'Event Engine', color: '#f59e0b' },
-    { x: 430, y: 180, w: 170, h: 36, label: 'DisasterEnvWrapper', color: '#ef4444' },
-    { x: 430, y: 240, w: 140, h: 36, label: 'disasterman', color: '#ef4444' },
-    { x: 430, y: 300, w: 190, h: 36, label: 'ZoneScorerNet + Llama', color: '#60a5fa' },
+    { x: 430, y: 180, w: 170, h: 36, label: 'WorldPolicyEnv', color: '#ef4444' },
+    { x: 430, y: 240, w: 150, h: 36, label: 'OpenEnv Contract', color: '#ef4444' },
+    { x: 430, y: 300, w: 200, h: 36, label: 'StabilityScorer + LLM', color: '#60a5fa' },
     { x: 700, y: 300, w: 100, h: 36, label: 'Groq API', color: '#14b8a6' },
     { x: 160, y: 380, w: 120, h: 36, label: 'FastAPI', color: '#a78bfa' },
     { x: 370, y: 380, w: 140, h: 36, label: 'SSE /stream', color: '#a78bfa' },
@@ -285,9 +285,9 @@ function ArchitectureDiagramPanel() {
           React.createElement('text', { x: n.x + n.w / 2, y: n.y + n.h / 2 + 4, textAnchor: 'middle',
             fill: 'rgba(255,255,255,0.7)', fontSize: 11, fontFamily: 'var(--font-mono)' }, n.label),
         )),
-        // Disaster threshold label
+        // Crisis threshold label
         React.createElement('text', { x: 520, y: 158, fill: 'rgba(255,255,255,0.25)', fontSize: 9,
-          fontFamily: 'var(--font-mono)' }, 'disaster_severity > 0.7'),
+          fontFamily: 'var(--font-mono)' }, 'crisis_risk > 0.7'),
       ),
     ),
   );

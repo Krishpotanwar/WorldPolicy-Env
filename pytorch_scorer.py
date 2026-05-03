@@ -10,8 +10,8 @@ diplomatic feature vector. Used by:
 Trains on synthetic episodes in <30 seconds on CPU. Weights baked into the Docker
 image via `RUN python pytorch_scorer.py` at build time → no runtime training cost.
 
-Why a real PyTorch module: the hackathon requires a non-trivial PyTorch model
-(judging signal). Same shape DisasterMan used (ZoneScorerNet).
+Why a real PyTorch module: it keeps stability estimates inspectable, cheap to
+run, and separate from the language-model debate layer.
 """
 
 from __future__ import annotations

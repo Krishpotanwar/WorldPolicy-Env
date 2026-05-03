@@ -1,7 +1,7 @@
 """
 client.py — WorldPolicy-Env V6.1 OpenEnv client.
 
-The async EnvClient subclass that judges' validators / training scripts use to
+The async EnvClient subclass that OpenEnv validators and training scripts use to
 talk to the server. Inherits the WebSocket transport from openenv-core. We only
 need to teach it how to:
   - serialize WorldPolicyAction → JSON payload
